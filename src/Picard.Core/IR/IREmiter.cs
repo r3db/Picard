@@ -3,7 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace Alea
+namespace Picard
 {
     public static class IREmiter
     {

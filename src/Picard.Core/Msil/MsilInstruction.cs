@@ -1,7 +1,7 @@
 using System;
 using System.Reflection.Emit;
 
-namespace Alea
+namespace Picard
 {
     public struct MsilInstruction
     {

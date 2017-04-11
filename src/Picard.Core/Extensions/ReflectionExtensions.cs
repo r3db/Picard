@@ -2,7 +2,7 @@ using System;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace Alea
+namespace Picard
 {
     // Todo: Refactor!
     // Todo: Rename!

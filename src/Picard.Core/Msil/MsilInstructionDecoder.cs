@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection.Emit;
 
-namespace Alea
+namespace Picard
 {
     public sealed class MsilInstructionDecoder
     {

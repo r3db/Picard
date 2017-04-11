@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace Alea
+namespace Picard
 {
     internal sealed class ModuleTokenResolver : ITokenResolver
     {

@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 
-namespace Alea
+namespace Picard
 {
     public static class MsilInstructionRepresenter
     {
