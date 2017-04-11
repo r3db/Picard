@@ -9,13 +9,12 @@ namespace Alea
     {
         private static void Main()
         {
-            Action<int, float> action0 = (a, b) =>
+            Action action0 = () =>
             {
                 Console.WriteLine("Some String 1");
-                Console.WriteLine("Some String 2");
-                Console.WriteLine("What else should I put here??");
             };
-            Expression<Action<int, float>> action1 = (a, b) => Console.WriteLine(234);
+
+            Expression<Action> action1 = () => Console.WriteLine(234);
 
             var method0 = action0.Method;
             var method1 = action1.Compile().Method;

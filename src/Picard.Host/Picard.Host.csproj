@@ -56,7 +56,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Picard.Core\Picard.Core.csproj">
       <Project>{48B0660C-BD2D-4FA1-A160-C3F5AF3CFA98}</Project>
-      <Name>Alea.BindingGenerator.Core</Name>
+      <Name>Picard.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
