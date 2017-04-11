@@ -37,7 +37,7 @@ namespace Picard
             foreach (var item in codes)
             {
                 var code = (OpCode)item.GetValue(null);
-
+                
                 if ((code.Value & Mask) == 0)
                 {
                     _sbOpCodes[code.Value] = code;

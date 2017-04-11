@@ -15,45 +15,39 @@ namespace Picard
         // Methods
         public static string Represent(MsilInstruction instruction, MethodInfo method)
         {
-            var dtn = method.DeclaringType == null 
-                ? typeof(object).Assembly.GetName().Name
-                : new AssemblyName(method.DeclaringType.Assembly.FullName).Name;
-
+            var dtn = new AssemblyName(method.DeclaringType.Assembly.FullName).Name;
             var locals = method.GetMethodBody().LocalVariables;
 
             var result = new StringBuilder();
             
             result.AppendFormat("IL_{0:x4}: 0x{1:x2}{2} {3}{4}", instruction.Offset, instruction.Code.Value, instruction.IsMultiByte ? null : "  ", instruction.Code.Name, new string(' ', 12 - instruction.Code.Name.Length));
 
-            // Todo: I don't like this harcoded switch!
-            switch (instruction.Code.Value)
+            switch (instruction.Code.Name)
             {
-                case 0x02:
+                case "ldarg.0":
                 {
                     var param = method.GetParameters();
                     result.AppendFormat(" // {0}", method.IsStatic ? param[0].Name : "this");
                     break;
                 }
-                case 0x03:
+                case "ldarg.1":
+                case "ldarg.2":
+                case "ldarg.3":
                 {
                     var param = method.GetParameters();
-                    result.AppendFormat(" // {0}", method.IsStatic ? param[1].Name ?? $"$_{(char)97}" : param[0].Name ?? $"$_{(char)97}");
+                    result.AppendFormat(" // {0}", method.IsStatic ? param[1].Name : param[0].Name);
                     break;
                 }
-                case 0x04:
+                case "ldloc.0":
+                case "ldloc.1":
+                case "ldloc.2":
+                case "ldloc.3":
                 {
-                    var param = method.GetParameters();
-                    result.AppendFormat(" // {0}", method.IsStatic ? param[2].Name ?? $"$_{(char)98}" : param[1].Name ?? $"$_{(char)98}");
-                    break;
-                }
-                case 0x06:
-                case 0x0a:
-                {
-                    result.AppendFormat(" // {0}", "V_0"/*GetReturnTypeName(dtn, method.GetMethodBody().LocalVariables[0].LocalType)*/);
+                    result.AppendFormat(" // {0}", "V_0" /*GetReturnTypeName(dtn, method.GetMethodBody().LocalVariables[0].LocalType)*/);
                     break;
                 }
             }
-
+            
             // Todo: Refactor!
             switch (instruction.Code.OperandType)
             {
