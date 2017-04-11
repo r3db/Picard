@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Reflection.Emit;
 
 namespace Picard
@@ -9,13 +10,13 @@ namespace Picard
     {
         // Internal Instance Data
         private readonly BinaryReader _reader;
-        private readonly ITokenResolver _resolver;
+        private readonly Module _module;
 
         // .Ctor
-        public MsilInstructionDecoder(byte[] msil, ITokenResolver resolver)
+        public MsilInstructionDecoder(byte[] msil, Module module)
         {
             _reader = new BinaryReader(new MemoryStream(msil));
-            _resolver = resolver;
+            _module = module;
         }
         
         // Methods
@@ -63,16 +64,16 @@ namespace Picard
             switch (code.OperandType)
             {
                 case OperandType.InlineBrTarget:      return _reader.ReadInt32() + offset;
-                case OperandType.InlineField:         return _resolver.ResolveField(_reader.ReadInt32());
+                case OperandType.InlineField:         return _module.ResolveField(_reader.ReadInt32());
                 case OperandType.InlineI:             return _reader.ReadInt32();
                 case OperandType.InlineI8:            return _reader.ReadInt64();
-                case OperandType.InlineMethod:        return _resolver.ResolveMember(_reader.ReadInt32());
+                case OperandType.InlineMethod:        return _module.ResolveMember(_reader.ReadInt32());
                 case OperandType.InlineR:             return _reader.ReadDouble();
                 case OperandType.InlineSig:           return _reader.ReadInt32();
-                case OperandType.InlineString:        return _resolver.ResolveString(_reader.ReadInt32());
+                case OperandType.InlineString:        return _module.ResolveString(_reader.ReadInt32());
                 case OperandType.InlineSwitch:        return _reader.ReadInt32();
                 case OperandType.InlineTok:           return _reader.ReadInt32();
-                case OperandType.InlineType:          return _resolver.ResolveType(_reader.ReadInt32());
+                case OperandType.InlineType:          return _module.ResolveType(_reader.ReadInt32());
                 case OperandType.InlineVar:           return _reader.ReadUInt16();
                 case OperandType.ShortInlineBrTarget: return (byte)(_reader.ReadByte() + offset);
                 case OperandType.ShortInlineI:        return _reader.ReadByte();

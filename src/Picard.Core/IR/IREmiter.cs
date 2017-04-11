@@ -12,7 +12,7 @@ namespace Picard
         {
             var sb = new StringBuilder();
             var stack = new Stack<object>();
-            var instructions = new MsilInstructionDecoder(method.GetILBytes(), method.GetTokenResolver()).DecodeAll().ToList();
+            var instructions = new MsilInstructionDecoder(method.GetMethodBody().GetILAsByteArray(), method.Module).DecodeAll().ToList();
             var locals = new object[100];
 
             var global = new StringBuilder();

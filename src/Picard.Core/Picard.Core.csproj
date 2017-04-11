@@ -47,15 +47,11 @@
     <Compile Include="..\Solution\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="Extensions\ReflectionExtensions.cs" />
     <Compile Include="IR\IREmiter.cs" />
     <Compile Include="Msil\MsilInstruction.cs" />
     <Compile Include="Msil\MsilInstructionDecoder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Representers\MsilInstructionRepresenter.cs" />
-    <Compile Include="TokenResolver\DynamicMethodTokenResolver.cs" />
-    <Compile Include="TokenResolver\ITokenResolver.cs" />
-    <Compile Include="TokenResolver\ModuleTokenResolver.cs" />
     <Compile Include="Utility\OpCodeUtility.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

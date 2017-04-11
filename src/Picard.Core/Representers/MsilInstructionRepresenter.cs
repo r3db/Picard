@@ -9,7 +9,7 @@ namespace Picard
     public static class MsilInstructionRepresenter
     {
         // Internal Static Data
-        private static readonly string mscorlib = typeof(string).Assembly.FullName;
+        private static readonly string _mscorlib = typeof(string).Assembly.FullName;
 
         // Todo: Refactor!
         // Methods
@@ -19,9 +19,7 @@ namespace Picard
                 ? typeof(object).Assembly.GetName().Name
                 : new AssemblyName(method.DeclaringType.Assembly.FullName).Name;
 
-            var locals = method.IsLightweightMethod()
-                ? new LocalVariableInfo[0]
-                : method.GetMethodBody().LocalVariables;
+            var locals = method.GetMethodBody().LocalVariables;
 
             var result = new StringBuilder();
             
@@ -196,7 +194,7 @@ namespace Picard
         // Helpers
         private static string GetReturnTypeName(string declaringTypeName, Type type)
         {
-            if (type.Assembly.FullName == mscorlib)
+            if (type.Assembly.FullName == _mscorlib)
             {
                 if (type == typeof(void))
                 {

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 
 namespace Picard
@@ -14,22 +13,17 @@ namespace Picard
             {
                 Console.WriteLine("Some String 1");
             };
-
-            Expression<Action> action1 = () => Console.WriteLine(234);
-
+            
             var method0 = action0.Method;
-            var method1 = action1.Compile().Method;
 
             DumpIL(method0);
             DumpIR(method0);
-            DumpIL(method1);
-            DumpIR(method1);
         }
 
         private static void DumpIL(MethodInfo method)
         {
             Console.ForegroundColor = ConsoleColor.Cyan;
-            var instructions = new MsilInstructionDecoder(method.GetILBytes(), method.GetTokenResolver()).DecodeAll();
+            var instructions = new MsilInstructionDecoder(method.GetMethodBody().GetILAsByteArray(), method.Module).DecodeAll();
 
             foreach (var instruction in instructions)
             {
