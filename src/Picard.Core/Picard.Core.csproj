@@ -7,7 +7,7 @@
     <ProjectGuid>{48B0660C-BD2D-4FA1-A160-C3F5AF3CFA98}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Alea</RootNamespace>
+    <RootNamespace>Picard</RootNamespace>
     <AssemblyName>Picard.Core</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
