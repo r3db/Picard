@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Reflection;
 
 namespace Picard
@@ -16,31 +15,33 @@ namespace Picard
             
             var method0 = action0.Method;
 
+            Console.ForegroundColor = ConsoleColor.Cyan;
             DumpIL(method0);
+            Console.WriteLine(new string('-', 110));
+            Console.ResetColor();
+
+            Console.ForegroundColor = ConsoleColor.Red;
             DumpIR(method0);
+            Console.WriteLine(new string('-', 110));
+            Console.ResetColor();
         }
 
         private static void DumpIL(MethodInfo method)
         {
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            var instructions = new MsilInstructionDecoder(method.GetMethodBody().GetILAsByteArray(), method.Module).DecodeAll();
+            var msil = method.GetMethodBody()?.GetILAsByteArray();
+            var instructions = new MsilInstructionDecoder(msil, method.Module).DecodeAll();
 
             foreach (var instruction in instructions)
             {
                 Console.WriteLine("\t" + MsilInstructionRepresenter.Represent(instruction, method));
             }
-
-            Console.ResetColor();
-            Console.WriteLine(new string('-', 110));
         }
 
         private static void DumpIR(MethodInfo method)
         {
             var result = IREmiter.Emit(method);
-            var lines = result.Split(new[] { Environment.NewLine }, StringSplitOptions.None).Where(x => x.Contains("__________") == false).ToList();
-
-            Console.ForegroundColor = ConsoleColor.Red;
-
+            var lines = result.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            
             foreach (var item in lines)
             {
                 Console.ForegroundColor = item.Contains("########## >")
@@ -49,9 +50,6 @@ namespace Picard
 
                 Console.WriteLine("\t" + item);
             }
-
-            Console.ResetColor();
-            Console.WriteLine(new string('-', 110));
         }
     }
 }

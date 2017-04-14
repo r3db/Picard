@@ -32,7 +32,8 @@ namespace Picard
         // Todo: Refactor!
         private string EmitInternal(MethodBase method)
         {
-            var instructions = new MsilInstructionDecoder(method.GetMethodBody()?.GetILAsByteArray(), method.Module).DecodeAll().ToList();
+            var msil = method.GetMethodBody()?.GetILAsByteArray();
+            var instructions = new MsilInstructionDecoder(msil, method.Module).DecodeAll().ToList();
             
             for (var i = 0; i < instructions.Count; ++i)
             {
@@ -54,43 +55,21 @@ namespace Picard
                         break;
                     }
                     case MsilInstructionOpCodeValue.Ldloc_0:
-                    {
-                        PushToStack(_locals[0]);
-                        continue;
-                    }
                     case MsilInstructionOpCodeValue.Ldloc_1:
-                    {
-                        PushToStack(_locals[1]);
-                        continue;
-                    }
                     case MsilInstructionOpCodeValue.Ldloc_2:
-                    {
-                        PushToStack(_locals[2]);
-                        continue;
-                    }
                     case MsilInstructionOpCodeValue.Ldloc_3:
                     {
-                        PushToStack(_locals[3]);
+                        var index = (int)MsilInstructionOpCodeValue.Ldloc_0 - (int)instruction.OpCodeValue;
+                        PushToStack(_locals[index]);
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Stloc_0:
-                    {
-                        StoreInLocal(0);
-                        continue;
-                    }
                     case MsilInstructionOpCodeValue.Stloc_1:
-                    {
-                        StoreInLocal(1);
-                        continue;
-                    }
                     case MsilInstructionOpCodeValue.Stloc_2:
-                    {
-                        StoreInLocal(2);
-                        continue;
-                    }
                     case MsilInstructionOpCodeValue.Stloc_3:
                     {
-                        StoreInLocal(3);
+                        var index = (int)MsilInstructionOpCodeValue.Stloc_0 - (int)instruction.OpCodeValue;
+                        StoreInLocal(index);
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Ldarg_S:
