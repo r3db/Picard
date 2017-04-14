@@ -45,11 +45,16 @@ namespace Picard
                     code = OpCodeUtility.GetSingleByteOpCode(il);
                 }
 
+                if ((MsilInstructionOpCodeValue)code.Value == MsilInstructionOpCodeValue.Br_S)
+                {
+                    Console.WriteLine();
+                }
+
                 var instruction = new MsilInstruction
                 {
                     Code        = code,
                     Offset      = offset,
-                    Operand     = ExtractOperand(code.OperandType, offset),
+                    Operand     = ExtractOperand(code.OperandType, (int)_reader.BaseStream.Position),
                     IsMultiByte = isMultiByte,
                     OpCodeValue = (MsilInstructionOpCodeValue)code.Value,
                 };
@@ -60,12 +65,13 @@ namespace Picard
             return result;
         }
 
+        // Todo: Check Offset computation is correct!
         // Helpers
         private object ExtractOperand(OperandType operandType, int offset)
         {
             switch (operandType)
             {
-                case OperandType.InlineBrTarget:      return _reader.ReadInt32() + offset;
+                case OperandType.InlineBrTarget:      return _reader.ReadInt32() + offset + 4;
                 case OperandType.InlineField:         return _module.ResolveField(_reader.ReadInt32());
                 case OperandType.InlineI:             return _reader.ReadInt32();
                 case OperandType.InlineI8:            return _reader.ReadInt64();
@@ -77,7 +83,7 @@ namespace Picard
                 case OperandType.InlineTok:           return _reader.ReadInt32();
                 case OperandType.InlineType:          return _module.ResolveType(_reader.ReadInt32());
                 case OperandType.InlineVar:           return _reader.ReadUInt16();
-                case OperandType.ShortInlineBrTarget: return (byte)(_reader.ReadByte() + offset);
+                case OperandType.ShortInlineBrTarget: return _reader.ReadByte() + offset + 1;
                 case OperandType.ShortInlineI:        return _reader.ReadByte();
                 case OperandType.ShortInlineR:        return _reader.ReadSingle();
                 case OperandType.ShortInlineVar:      return _reader.ReadByte();
