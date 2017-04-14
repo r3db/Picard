@@ -1,5 +1,7 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 
@@ -12,6 +14,7 @@ namespace Picard
         private readonly Stack _instructionStack = new Stack();
         private readonly StringBuilder _directives = new StringBuilder();
         private readonly StringBuilder _instructions = new StringBuilder();
+        private readonly HashSet<int> _labels = new HashSet<int>();
 
         private readonly MethodBody _body;
         private readonly byte[] _msil;
@@ -50,6 +53,11 @@ namespace Picard
 
             foreach (var instruction in new MsilInstructionDecoder(_msil, _module).DecodeAll())
             {
+                if (_labels.Contains(instruction.Offset))
+                {
+                    EmitLabel(instruction);
+                }
+
                 switch (instruction.OpCodeValue)
                 {
                     case MsilInstructionOpCodeValue.Nop:
@@ -344,7 +352,7 @@ namespace Picard
                         break;
                     }
                 }
-                
+
                 //if (instruction.Code == System.Reflection.Emit.OpCodes.Br_S)
                 //{
                 //    var arg0 = stack.Pop();
@@ -497,17 +505,23 @@ namespace Picard
                 //    continue;
                 //}
 
-                _instructions.AppendLine(string.Format("{0}########## > {1}", CreatePreamble(instruction), instruction.Code));
+                AppendPreamble(instruction);
+                _instructions.AppendLine(string.Format("########## > {0}", instruction.Code));
             }
         }
 
         // Helpers - Instructions
-        private void EmitNop(MsilInstruction instruction)
+        private void EmitLabel(MsilInstruction instruction)
         {
-            _instructions.Append(CreatePreamble(instruction));
-            _instructions.AppendLine("call void @llvm.donothing()");
+            _instructions.AppendLine(CreatePreamble(instruction));
         }
 
+        private void EmitNop(MsilInstruction instruction)
+        {
+            AppendPreamble(instruction);
+            _instructions.AppendLine("call void @llvm.donothing()");
+        }
+        
         // Todo: Refactor!
         private void EmitCall(MsilInstruction instruction)
         {
@@ -532,8 +546,10 @@ namespace Picard
                 }
 
                 var str = (string)_directiveStack.Pop();
-                _instructions.AppendLine(string.Format("{0}{1} = getelementptr [{2} x i8]* {3}, i64 0, i64 0", CreatePreamble(instruction), identifier, str.Length + 1, pop));
-                _instructions.AppendLine(string.Format("{0}call i32 @puts(i8* {1})", CreatePreamble(instruction), identifier));
+                AppendPreamble(instruction);
+                _instructions.AppendLine(string.Format("{0} = getelementptr [{1} x i8]* {2}, i64 0, i64 0", identifier, str.Length + 1, pop));
+                AppendPreamble(instruction);
+                _instructions.AppendLine(string.Format("call i32 @puts(i8* {0})", identifier));
             }
             else
             {
@@ -543,14 +559,21 @@ namespace Picard
 
         private void EmitRet(MsilInstruction instruction)
         {
-            _instructions.Append(CreatePreamble(instruction));
+            AppendPreamble(instruction);
             _instructions.AppendLine("ret void");
         }
 
         private void EmitBrS(MsilInstruction instruction)
         {
-            _instructions.Append(CreatePreamble(instruction));
-            _instructions.AppendLine(string.Format("br label IR_{0:x4}", instruction.Operand));
+            var label = (int)instruction.Operand;
+
+            if (_labels.Contains(label) == false)
+            {
+                _labels.Add(label);
+            }
+
+            AppendPreamble(instruction);
+            _instructions.AppendLine(string.Format("br label IR_{0:x4}", label));
         }
 
         private void EmitLdstr(MsilInstruction instruction)
@@ -561,8 +584,8 @@ namespace Picard
             _instructionStack.Push(identifier);
             _directiveStack.Push(operand);
 
-            _directives.Append(CreatePreamble(instruction));
-            _directives.Append(string.Format("{0} = constant [{1} x i8] c\"{2}\\00\"", identifier, operand.Length + 1, operand));
+            AppendPreamble(instruction);
+            _directives.AppendLine(string.Format("{0} = constant [{1} x i8] c\"{2}\\00\"", identifier, operand.Length + 1, operand));
         }
 
         // Helpers - General
@@ -575,7 +598,13 @@ namespace Picard
         {
             return string.Format("%{0}", _instructionIdentifier++);
         }
-        
+
+        [Conditional("DEBUG")]
+        private void AppendPreamble(MsilInstruction instruction)
+        {
+            _instructions.Append(CreatePreamble(instruction));
+        }
+
         // Helpers - Static
         private static string CreatePreamble(MsilInstruction instruction)
         {

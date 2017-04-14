@@ -50,8 +50,9 @@ namespace Picard
             var nl = Environment.NewLine;
 
             return new StringBuilder()
-                .Append(string.Join(nl, result.Select(x => x.Directives)) + nl + nl)
-                .Append(string.Join(nl, result.Select(x => x.Code)))
+                .Append(string.Join(nl, result.Select(x => x.Directives.Trim('\r', '\n'))))
+                .Append(nl + nl)
+                .Append(string.Join(nl + nl, result.Select(x => x.Code.Trim('\r', '\n'))))
                 .ToString();
         }        
     }
