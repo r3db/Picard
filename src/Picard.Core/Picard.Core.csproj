@@ -53,6 +53,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Representers\MsilInstructionRepresenter.cs" />
     <Compile Include="Utility\OpCodeUtility.cs" />
+    <Compile Include="Msil\MsilInstructionOpCodeValue.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

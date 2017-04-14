@@ -22,26 +22,26 @@ namespace Picard
             
             result.AppendFormat("IL_{0:x4}: 0x{1:x2}{2} {3}{4}", instruction.Offset, instruction.Code.Value, instruction.IsMultiByte ? null : "  ", instruction.Code.Name, new string(' ', 12 - instruction.Code.Name.Length));
 
-            switch (instruction.Code.Name)
+            switch (instruction.OpCodeValue)
             {
-                case "ldarg.0":
+                case MsilInstructionOpCodeValue.Ldarg_0:
                 {
                     var param = method.GetParameters();
                     result.AppendFormat(" // {0}", method.IsStatic ? param[0].Name : "this");
                     break;
                 }
-                case "ldarg.1":
-                case "ldarg.2":
-                case "ldarg.3":
+                case MsilInstructionOpCodeValue.Ldarg_1:
+                case MsilInstructionOpCodeValue.Ldarg_2:
+                case MsilInstructionOpCodeValue.Ldarg_3:
                 {
                     var param = method.GetParameters();
                     result.AppendFormat(" // {0}", method.IsStatic ? param[1].Name : param[0].Name);
                     break;
                 }
-                case "ldloc.0":
-                case "ldloc.1":
-                case "ldloc.2":
-                case "ldloc.3":
+                case MsilInstructionOpCodeValue.Ldloc_0:
+                case MsilInstructionOpCodeValue.Ldloc_1:
+                case MsilInstructionOpCodeValue.Ldloc_2:
+                case MsilInstructionOpCodeValue.Ldloc_3:
                 {
                     result.AppendFormat(" // {0}", "V_0" /*GetReturnTypeName(dtn, method.GetMethodBody().LocalVariables[0].LocalType)*/);
                     break;

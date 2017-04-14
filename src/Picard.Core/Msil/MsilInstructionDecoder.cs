@@ -26,7 +26,7 @@ namespace Picard
 
             while (_reader.BaseStream.Position < _reader.BaseStream.Length)
             {
-                var offset = (int) _reader.BaseStream.Position;
+                var offset = (int)_reader.BaseStream.Position;
                 var il = _reader.ReadByte();
 
                 OpCode code;
@@ -49,7 +49,8 @@ namespace Picard
                     Code = code,
                     Offset = offset,
                     Operand = GetOperand(code, offset),
-                    IsMultiByte = isMultiByte
+                    IsMultiByte = isMultiByte,
+                    OpCodeValue = (MsilInstructionOpCodeValue)code.Value,
                 };
 
                 result.Add(instruction);
