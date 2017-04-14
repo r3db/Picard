@@ -56,7 +56,7 @@ namespace Picard
                     case MsilInstructionOpCodeValue.Ldloc_3:
                     {
                         var index = (int)MsilInstructionOpCodeValue.Ldloc_0 - (int)instruction.OpCodeValue;
-                        PushToStack(locals[index]);
+                        _stack.Push(locals[index]);
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Stloc_0:
@@ -79,12 +79,12 @@ namespace Picard
                     }
                     case MsilInstructionOpCodeValue.Ldnull:
                     {
-                        PushToStack("null");
+                        _stack.Push("null");
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Ldc_I4_M1:
                     {
-                        PushToStack(-1);
+                        _stack.Push(-1);
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Ldc_I4_0:
@@ -98,7 +98,7 @@ namespace Picard
                     case MsilInstructionOpCodeValue.Ldc_I4_8:
                     {
                         var value = (int)MsilInstructionOpCodeValue.Ldc_I4_0 - (int)instruction.OpCodeValue;
-                        PushToStack(value);
+                        _stack.Push(value);
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Ldc_I4_S:
@@ -107,7 +107,7 @@ namespace Picard
                     case MsilInstructionOpCodeValue.Ldc_R4:
                     case MsilInstructionOpCodeValue.Ldc_R8:
                     {
-                        PushToStack(instruction.Operand);
+                        _stack.Push(instruction.Operand);
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Dup:
@@ -494,11 +494,6 @@ namespace Picard
             }
 
             return _instructions.ToString();
-        }
-        
-        private void PushToStack(object value)
-        {
-            _stack.Push(value);
         }
 
         // Helpers - Instructions
