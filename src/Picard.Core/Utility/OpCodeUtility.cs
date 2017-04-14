@@ -4,14 +4,13 @@ using System.Reflection.Emit;
 namespace Picard
 {
     // Done!
-    // Todo: We can use less memory for '_mbOpCodes'.
     internal static class OpCodeUtility
     {
         // Internal Const Data
         private const int Mask = 0xfe00;
 
         private static readonly OpCode[] _sbOpCodes = new OpCode[0x100];
-        private static readonly OpCode[] _mbOpCodes = new OpCode[0x100];
+        private static readonly OpCode[] _mbOpCodes = new OpCode[0x01f];
 
         // Static .Ctor
         static OpCodeUtility()
