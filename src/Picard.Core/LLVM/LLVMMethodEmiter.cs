@@ -573,7 +573,7 @@ namespace Picard
             }
 
             AppendPreamble(instruction);
-            _instructions.AppendLine(string.Format("br label IR_{0:x4}", label));
+            _instructions.AppendLine(string.Format("br label %IR_{0:x4}", label));
         }
 
         private void EmitLdstr(MsilInstruction instruction)
