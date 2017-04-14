@@ -39,9 +39,7 @@ namespace Picard
 
         private static void DumpLLVM(MethodInfo method)
         {
-            var emiter = new LLVMEmiter(method, method);
-
-            foreach (var item in emiter.Emit().Split(new[] { Environment.NewLine }, StringSplitOptions.None))
+            foreach (var item in LLVMEmiter.Emit(method, method).Split(new[] { Environment.NewLine }, StringSplitOptions.None))
             {
                 Console.ForegroundColor = item.Contains("########## >")
                     ? ConsoleColor.Yellow

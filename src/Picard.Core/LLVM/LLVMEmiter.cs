@@ -3,27 +3,41 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 
 namespace Picard
 {
     public sealed class LLVMEmiter
     {
         // Internal Instance Data
+        private readonly ThreadLocal<Func<string>> _identifierGenerator = new ThreadLocal<Func<string>>(() =>
+        {
+            var identifier = 0;
+            return () => string.Format("@{0}_{1}", Thread.CurrentThread.ManagedThreadId, identifier++);
+        });
+
+        // Internal Instance Data
         private readonly List<MethodInfo> _methods = new List<MethodInfo>();
 
         // .Ctor
-        public LLVMEmiter(params MethodInfo[] methods)
+        private LLVMEmiter(params MethodInfo[] methods)
         {
             _methods.AddRange(methods);
         }
 
-        // Methods
-        // Todo: Refactor!
-        public string Emit()
+        // Factory .Ctor
+        public static string Emit(params MethodInfo[] methods)
         {
-            var r = _methods.Select(x =>
+            return new LLVMEmiter(methods).Emit();
+        }
+
+        // Helpers
+        private string Emit()
+        {
+            // Todo: Check for any missing Methods we may have found on the way!
+            var result = _methods.AsParallel().Select(x =>
             {
-                var emiter = LLVMMethodEmiter.Emit(x);
+                var emiter = LLVMMethodEmiter.Emit(x, _identifierGenerator.Value);
 
                 return new
                 {
@@ -36,8 +50,8 @@ namespace Picard
             var nl = Environment.NewLine;
 
             return new StringBuilder()
-                .Append(string.Join(nl, r.Select(x => x.Directives)) + nl + nl)
-                .Append(string.Join(nl, r.Select(x => x.Code)))
+                .Append(string.Join(nl, result.Select(x => x.Directives)) + nl + nl)
+                .Append(string.Join(nl, result.Select(x => x.Code)))
                 .ToString();
         }        
     }

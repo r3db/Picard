@@ -16,23 +16,24 @@ namespace Picard
         private readonly MethodBody _body;
         private readonly byte[] _msil;
         private readonly Module _module;
+        private readonly Func<string> _directiveIdentifierGenerator;
 
-        private int _directiveIdentifier;
         private int _instructionIdentifier;
 
         // .Ctor
-        private LLVMMethodEmiter(MethodBase method)
+        private LLVMMethodEmiter(MethodBase method, Func<string> directiveIdentifierGenerator)
         {
             _body = method.GetMethodBody();
             // ReSharper disable once PossibleNullReferenceException
             _msil = _body.GetILAsByteArray();
             _module = method.Module;
+            _directiveIdentifierGenerator = directiveIdentifierGenerator;
         }
         
         // Factory .Ctor
-        internal static LLVMMethodEmiter Emit(MethodBase method)
+        internal static LLVMMethodEmiter Emit(MethodBase method, Func<string> directiveIdentifierGenerator)
         {
-            var instance = new LLVMMethodEmiter(method);
+            var instance = new LLVMMethodEmiter(method, directiveIdentifierGenerator);
             instance.Emit();
             return instance;
         }
@@ -567,7 +568,7 @@ namespace Picard
         // Helpers - General
         private string NextDirectiveIdentifier()
         {
-            return string.Format("@{0}", _directiveIdentifier++);
+            return _directiveIdentifierGenerator();
         }
 
         private string NextInstructionIdentifier()
