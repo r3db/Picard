@@ -4,6 +4,7 @@ using System.Reflection.Emit;
 namespace Picard
 {
     // Done!
+    // Todo: We can use less memory for '_mbOpCodes'.
     internal static class OpCodeUtility
     {
         // Internal Const Data
@@ -15,26 +16,7 @@ namespace Picard
         // Static .Ctor
         static OpCodeUtility()
         {
-            Register();
-        }
-
-        // Methods
-        internal static OpCode GetSingleByteOpCode(byte code)
-        {
-            return _sbOpCodes[code];
-        }
-
-        internal static OpCode GetMultipleByteOpCode(byte code)
-        {
-            return _mbOpCodes[code];
-        }
-
-        // Helpers
-        private static void Register()
-        {
-            var codes = typeof(OpCodes).GetFields();
-
-            foreach (var item in codes)
+            foreach (var item in typeof(OpCodes).GetFields())
             {
                 var code = (OpCode)item.GetValue(null);
                 
@@ -47,6 +29,17 @@ namespace Picard
                     _mbOpCodes[code.Value & 0xff] = code;
                 }
             }
+        }
+
+        // Methods
+        internal static OpCode GetSingleByteOpCode(byte code)
+        {
+            return _sbOpCodes[code];
+        }
+
+        internal static OpCode GetMultipleByteOpCode(byte code)
+        {
+            return _mbOpCodes[code];
         }
     }
 }
