@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 
 namespace Picard
 {
+    // Done!
     public sealed class MsilInstructionDecoder
     {
         // Internal Instance Data
@@ -46,9 +47,9 @@ namespace Picard
 
                 var instruction = new MsilInstruction
                 {
-                    Code = code,
-                    Offset = offset,
-                    Operand = GetOperand(code, offset),
+                    Code        = code,
+                    Offset      = offset,
+                    Operand     = ExtractOperand(code.OperandType, offset),
                     IsMultiByte = isMultiByte,
                     OpCodeValue = (MsilInstructionOpCodeValue)code.Value,
                 };
@@ -60,9 +61,9 @@ namespace Picard
         }
 
         // Helpers
-        private object GetOperand(OpCode code, int offset)
+        private object ExtractOperand(OperandType operandType, int offset)
         {
-            switch (code.OperandType)
+            switch (operandType)
             {
                 case OperandType.InlineBrTarget:      return _reader.ReadInt32() + offset;
                 case OperandType.InlineField:         return _module.ResolveField(_reader.ReadInt32());
