@@ -345,22 +345,7 @@ namespace Picard
                 //    sb.AppendLine(string.Format("br i32 {0}, label %true label %false", res0));
                 //    continue;
                 //}
-
-                //if (instruction.Code == System.Reflection.Emit.OpCodes.Ldstr)
-                //{
-                //    var res0 = string.Format("@gn_{0}", globalCounter++);
-                //    --localCounter;
-                //    stack.Push(res0);
-
-                //    var str = (string)instruction.Operand;
-
-                //    globalData.Add(res0, str);
-
-                //    global.AppendLine(string.Format("{0} = constant [{1} x i8] c\"{2}\\00\"", res0, str.Length + 1, str));
-                //    sb.AppendLine("__________");
-                //    continue;
-                //}
-
+                
                 //if (instruction.Code == System.Reflection.Emit.OpCodes.Stloc_0)
                 //{
                 //    locals[0] = stack.Pop();
