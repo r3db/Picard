@@ -39,10 +39,9 @@ namespace Picard
 
         private static void DumpIR(MethodInfo method)
         {
-            var result = IREmiter.Emit(method);
-            var lines = result.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-            
-            foreach (var item in lines)
+            var emiter = new IREmiter(method);
+
+            foreach (var item in emiter.Emit().Split(new[] { Environment.NewLine }, StringSplitOptions.None))
             {
                 Console.ForegroundColor = item.Contains("########## >")
                     ? ConsoleColor.Yellow
