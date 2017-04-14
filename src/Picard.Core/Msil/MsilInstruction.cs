@@ -3,6 +3,7 @@ using System.Reflection.Emit;
 
 namespace Picard
 {
+    // Done!
     public struct MsilInstruction
     {
         internal OpCode Code { get; set; }
