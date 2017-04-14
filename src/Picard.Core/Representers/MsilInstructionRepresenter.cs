@@ -45,6 +45,7 @@ namespace Picard
                 new string(' ', 12 - instruction.Code.Name.Length));
         }
 
+        // Todo: This is not complete!
         private static string RepresentVariableInformation(MsilInstruction instruction, MethodBase method)
         {
             switch (instruction.OpCodeValue)
@@ -73,6 +74,7 @@ namespace Picard
             return null;
         }
 
+        // Todo: This is not complete!
         private static string RepresentOperand(MsilInstruction instruction, string dtn, IList<LocalVariableInfo> locals)
         {
             // Todo: Refactor!
@@ -198,11 +200,8 @@ namespace Picard
 
             return null;
         }
-
-
-
-
-
+        
+        // Todo: This is not complete!
         private static string GetReturnTypeName(string declaringTypeName, Type type)
         {
             if (type.Assembly.FullName == _mscorlib)
