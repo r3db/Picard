@@ -5,34 +5,41 @@ using System.Text;
 
 namespace Picard
 {
-    internal sealed class IRMethodEmiter
+    internal sealed class LLVMMethodEmiter
     {
         // Internal Instance Data
-        private readonly Stack _stack = new Stack();
-        private readonly IRDirectiveEmiter _directiveEmiter;
+        private readonly Stack _directiveStack = new Stack();
+        private readonly Stack _instructionStack = new Stack();
+        private readonly StringBuilder _directives = new StringBuilder();
         private readonly StringBuilder _instructions = new StringBuilder();
-        private int _identifierCounter;
+
+        private readonly MethodBody _body;
+        private readonly byte[] _msil;
+        private readonly Module _module;
+
+        private int _directiveIdentifier;
+        private int _instructionIdentifier;
 
         // .Ctor
-        private IRMethodEmiter(IRDirectiveEmiter directiveEmiter)
+        internal LLVMMethodEmiter(MethodBase method)
         {
-            _directiveEmiter = directiveEmiter;
+            _body = method.GetMethodBody();
+            // ReSharper disable once PossibleNullReferenceException
+            _msil = _body.GetILAsByteArray();
+            _module = method.Module;
         }
+        
+        // Properties - Readonly
+        internal string Code => _instructions.ToString();
 
-        // Factory .Ctor
-        internal static string Emit(MethodBase method, IRDirectiveEmiter directiveEmiter)
+        internal string Directives => _directives.ToString();
+
+        // Methods
+        internal void Emit()
         {
-            return new IRMethodEmiter(directiveEmiter).EmitInternal(method);
-        }
+            var locals = new ArrayList(_body.LocalVariables.Count);
 
-        // Helpers
-        private string EmitInternal(MethodBase method)
-        {
-            var body = method.GetMethodBody();
-            var msil = body?.GetILAsByteArray();
-            var locals = new ArrayList(body.LocalVariables.Count);
-
-            foreach (var instruction in new MsilInstructionDecoder(msil, method.Module).DecodeAll())
+            foreach (var instruction in new MsilInstructionDecoder(_msil, _module).DecodeAll())
             {
                 switch (instruction.OpCodeValue)
                 {
@@ -55,7 +62,7 @@ namespace Picard
                     case MsilInstructionOpCodeValue.Ldloc_3:
                     {
                         var index = (int)MsilInstructionOpCodeValue.Ldloc_0 - (int)instruction.OpCodeValue;
-                        _stack.Push(locals[index]);
+                        _instructionStack.Push(locals[index]);
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Stloc_0:
@@ -64,7 +71,7 @@ namespace Picard
                     case MsilInstructionOpCodeValue.Stloc_3:
                     {
                         var index = (int)MsilInstructionOpCodeValue.Stloc_0 - (int)instruction.OpCodeValue;
-                        locals[index] = _stack.Pop();
+                        locals[index] = _instructionStack.Pop();
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Ldarg_S:
@@ -78,12 +85,12 @@ namespace Picard
                     }
                     case MsilInstructionOpCodeValue.Ldnull:
                     {
-                        _stack.Push("null");
+                        _instructionStack.Push("null");
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Ldc_I4_M1:
                     {
-                        _stack.Push(-1);
+                        _instructionStack.Push(-1);
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Ldc_I4_0:
@@ -97,7 +104,7 @@ namespace Picard
                     case MsilInstructionOpCodeValue.Ldc_I4_8:
                     {
                         var value = (int)MsilInstructionOpCodeValue.Ldc_I4_0 - (int)instruction.OpCodeValue;
-                        _stack.Push(value);
+                        _instructionStack.Push(value);
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Ldc_I4_S:
@@ -106,7 +113,7 @@ namespace Picard
                     case MsilInstructionOpCodeValue.Ldc_R4:
                     case MsilInstructionOpCodeValue.Ldc_R8:
                     {
-                        _stack.Push(instruction.Operand);
+                        _instructionStack.Push(instruction.Operand);
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Dup:
@@ -483,8 +490,6 @@ namespace Picard
 
                 _instructions.AppendLine(string.Format("{0}########## > {1}", CreatePreamble(instruction), instruction.Code));
             }
-
-            return _instructions.ToString();
         }
 
         // Helpers - Instructions
@@ -502,13 +507,13 @@ namespace Picard
 
             for (var i = 0; i < operand.GetParameters().Length; i++)
             {
-                stack.Push(_stack.Pop());
+                stack.Push(_instructionStack.Pop());
             }
 
             // Todo: We either need to match this with an intrisic 'function call' or process another method!
             if (operand.Name == "WriteLine")
             {
-                var identifier = NextIdentifier();
+                var identifier = NextInstructionIdentifier();
                 var pop = stack.Pop() as string;
 
                 if (pop == null)
@@ -517,7 +522,7 @@ namespace Picard
                     return;
                 }
 
-                var str = _directiveEmiter.GetData<string>(pop);
+                var str = (string)_directiveStack.Pop();
                 _instructions.AppendLine(string.Format("{0}{1} = getelementptr [{2} x i8]* {3}, i64 0, i64 0", CreatePreamble(instruction), identifier, str.Length + 1, pop));
                 _instructions.AppendLine(string.Format("{0}call i32 @puts(i8* {1})", CreatePreamble(instruction), identifier));
             }
@@ -542,25 +547,26 @@ namespace Picard
         private void EmitLdstr(MsilInstruction instruction)
         {
             var operand = (string)instruction.Operand;
-            var identifier = _directiveEmiter.NextIdentifier();
+            var identifier = NextDirectiveIdentifier();
 
-            _stack.Push(identifier);
-            _directiveEmiter.AddData(identifier, operand);
+            _instructionStack.Push(identifier);
+            _directiveStack.Push(operand);
 
-            _directiveEmiter.AddDirective(string.Format("{0}{1} = constant [{2} x i8] c\"{3}\\00\"",
-                CreatePreamble(instruction),
-                identifier,
-                operand.Length + 1,
-                operand));
+            _directives.Append(CreatePreamble(instruction));
+            _directives.Append(string.Format("{0} = constant [{1} x i8] c\"{2}\\00\"", identifier, operand.Length + 1, operand));
         }
 
         // Helpers - General
-        // Todo: I don't like this!
-        private string NextIdentifier()
+        private string NextDirectiveIdentifier()
         {
-            return string.Format("%{0}", _identifierCounter++);
+            return string.Format("@{0}", _directiveIdentifier++);
         }
 
+        private string NextInstructionIdentifier()
+        {
+            return string.Format("%{0}", _instructionIdentifier++);
+        }
+        
         // Helpers - Static
         private static string CreatePreamble(MsilInstruction instruction)
         {

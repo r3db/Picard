@@ -21,7 +21,7 @@ namespace Picard
             Console.ResetColor();
 
             Console.ForegroundColor = ConsoleColor.Red;
-            DumpIR(method0);
+            DumpLLVM(method0);
             Console.WriteLine(new string('-', 110));
             Console.ResetColor();
         }
@@ -37,9 +37,9 @@ namespace Picard
             }
         }
 
-        private static void DumpIR(MethodInfo method)
+        private static void DumpLLVM(MethodInfo method)
         {
-            var emiter = new IREmiter(method);
+            var emiter = new LLVMEmiter(method);
 
             foreach (var item in emiter.Emit().Split(new[] { Environment.NewLine }, StringSplitOptions.None))
             {
