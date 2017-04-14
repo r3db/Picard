@@ -23,13 +23,12 @@ namespace Picard
         {
             var r = _methods.Select(x =>
             {
-                var emiter = new LLVMMethodEmiter(x);
-                emiter.Emit();
+                var emiter = LLVMMethodEmiter.Emit(x);
 
                 return new
                 {
                     emiter.Directives,
-                    Instructions = emiter.Code
+                    emiter.Code
                 };
             })
             .ToArray();
@@ -38,7 +37,7 @@ namespace Picard
 
             return new StringBuilder()
                 .Append(string.Join(nl, r.Select(x => x.Directives)) + nl + nl)
-                .Append(string.Join(nl, r.Select(x => x.Instructions)))
+                .Append(string.Join(nl, r.Select(x => x.Code)))
                 .ToString();
         }        
     }

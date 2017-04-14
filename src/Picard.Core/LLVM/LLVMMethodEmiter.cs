@@ -21,7 +21,7 @@ namespace Picard
         private int _instructionIdentifier;
 
         // .Ctor
-        internal LLVMMethodEmiter(MethodBase method)
+        private LLVMMethodEmiter(MethodBase method)
         {
             _body = method.GetMethodBody();
             // ReSharper disable once PossibleNullReferenceException
@@ -29,13 +29,21 @@ namespace Picard
             _module = method.Module;
         }
         
+        // Factory .Ctor
+        internal static LLVMMethodEmiter Emit(MethodBase method)
+        {
+            var instance = new LLVMMethodEmiter(method);
+            instance.Emit();
+            return instance;
+        }
+
         // Properties - Readonly
         internal string Code => _instructions.ToString();
 
         internal string Directives => _directives.ToString();
 
-        // Methods
-        internal void Emit()
+        // Helpers
+        private void Emit()
         {
             var locals = new ArrayList(_body.LocalVariables.Count);
 
