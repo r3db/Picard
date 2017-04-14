@@ -22,7 +22,7 @@ namespace Picard
         public string Emit()
         {
             var result = new StringBuilder();
-            var methods = _methods.Select(x => new IRMethodEmiter(x, _state).Emit()).ToList();
+            var methods = _methods.Select(x => IRMethodEmiter.Emit(x, _state)).ToList();
 
             result.Append(_state.Directives + Environment.NewLine);
 

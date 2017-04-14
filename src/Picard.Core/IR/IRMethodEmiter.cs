@@ -1,6 +1,6 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -9,32 +9,32 @@ namespace Picard
     internal sealed class IRMethodEmiter
     {
         // Internal Instance Data
-        private readonly object[] _locals;
-        private readonly IRDirectiveEmiter _state;
-        private readonly Stack<object> _stack = new Stack<object>();
+        private readonly Stack _stack = new Stack();
+        private readonly IRDirectiveEmiter _directiveEmiter;
         private readonly StringBuilder _instructions = new StringBuilder();
-        private readonly IList<MsilInstruction> _msilInstructions;
         private int _identifierCounter;
 
         // .Ctor
-        internal IRMethodEmiter(MethodBase method, IRDirectiveEmiter state)
+        private IRMethodEmiter(IRDirectiveEmiter directiveEmiter)
+        {
+            _directiveEmiter = directiveEmiter;
+        }
+
+        // Factory .Ctor
+        internal static string Emit(MethodBase method, IRDirectiveEmiter directiveEmiter)
+        {
+            return new IRMethodEmiter(directiveEmiter).EmitInternal(method);
+        }
+
+        // Helpers
+        private string EmitInternal(MethodBase method)
         {
             var body = method.GetMethodBody();
             var msil = body?.GetILAsByteArray();
+            var locals = new ArrayList(body.LocalVariables.Count);
 
-            _state = state;
-            // ReSharper disable once PossibleNullReferenceException
-            _locals = new object[body.LocalVariables.Count];
-            _msilInstructions = new MsilInstructionDecoder(msil, method.Module).DecodeAll().ToList();
-        }
-
-        // Methods
-        internal string Emit()
-        {
-            for (var i = 0; i < _msilInstructions.Count; ++i)
+            foreach (var instruction in new MsilInstructionDecoder(msil, method.Module).DecodeAll())
             {
-                var instruction = _msilInstructions[i];
-            
                 switch (instruction.OpCodeValue)
                 {
                     case MsilInstructionOpCodeValue.Nop:
@@ -56,7 +56,7 @@ namespace Picard
                     case MsilInstructionOpCodeValue.Ldloc_3:
                     {
                         var index = (int)MsilInstructionOpCodeValue.Ldloc_0 - (int)instruction.OpCodeValue;
-                        PushToStack(_locals[index]);
+                        PushToStack(locals[index]);
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Stloc_0:
@@ -65,7 +65,7 @@ namespace Picard
                     case MsilInstructionOpCodeValue.Stloc_3:
                     {
                         var index = (int)MsilInstructionOpCodeValue.Stloc_0 - (int)instruction.OpCodeValue;
-                        StoreInLocal(index);
+                        locals[index] = _stack.Pop();
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Ldarg_S:
@@ -118,35 +118,7 @@ namespace Picard
                     }
                     case MsilInstructionOpCodeValue.Call:
                     {
-                        var op = (MethodInfo)instruction.Operand;
-                        var tempStack = new Stack<object>();
-
-                        for (var k = 0; k < op.GetParameters().Length; k++)
-                        {
-                            tempStack.Push(_stack.Pop());
-                        }
-
-                        if (op.Name == "WriteLine")
-                        {
-                            var res0 = NextIdentifier();
-                            var pop = tempStack.Pop() as string;
-
-                            if (pop == null)
-                            {
-                                _instructions.AppendLine(string.Format("########## > {0}", instruction.Code));
-                                continue;
-                            }
-
-                            var str = _state.GetData<string>(pop);
-                            _instructions.AppendLine(string.Format("{0} = getelementptr [{1} x i8]* {2}, i64 0, i64 0", res0, str.Length + 1, pop));
-                            _instructions.AppendFormat("IR_{0:x4}: ", instruction.Offset);
-                            _instructions.AppendLine(string.Format("call i32 @puts(i8* {0})", res0));
-                        }
-                        else
-                        {
-                            _instructions.AppendLine(string.Format("call i32 @{0}({1})", op.Name, string.Join(", ", tempStack)));
-                        }
-
+                        EmitCall(instruction);
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Calli:
@@ -518,23 +490,12 @@ namespace Picard
                 //    continue;
                 //}
 
-                _instructions.AppendLine(string.Format("########## > {0}", instruction.Code));
+                _instructions.AppendLine(string.Format("{0}########## > {1}", CreatePreamble(instruction), instruction.Code));
             }
 
             return _instructions.ToString();
         }
-
-        // Helpers
-        private string NextIdentifier()
-        {
-            return string.Format("%{0}", _identifierCounter++);
-        }
         
-        private void StoreInLocal(int index)
-        {
-            _locals[index] = _stack.Pop();
-        }
-
         private void PushToStack(object value)
         {
             _stack.Push(value);
@@ -547,6 +508,40 @@ namespace Picard
             _instructions.AppendLine("call void @llvm.donothing()");
         }
 
+        // Todo: Refactor!
+        private void EmitCall(MsilInstruction instruction)
+        {
+            var op = (MethodInfo)instruction.Operand;
+            var tempStack = new Stack<object>();
+
+            for (var k = 0; k < op.GetParameters().Length; k++)
+            {
+                tempStack.Push(_stack.Pop());
+            }
+
+            if (op.Name == "WriteLine")
+            {
+                var res0 = NextIdentifier();
+                var pop = tempStack.Pop() as string;
+
+                if (pop == null)
+                {
+                    _instructions.AppendLine(string.Format("########## > {0}", instruction.Code));
+                    return;
+                }
+
+                var str = _directiveEmiter.GetData<string>(pop);
+                _instructions.AppendLine(string.Format("{0} = getelementptr [{1} x i8]* {2}, i64 0, i64 0", res0, str.Length + 1,
+                    pop));
+                _instructions.AppendFormat("IR_{0:x4}: ", instruction.Offset);
+                _instructions.AppendLine(string.Format("call i32 @puts(i8* {0})", res0));
+            }
+            else
+            {
+                _instructions.AppendLine(string.Format("call i32 @{0}({1})", op.Name, string.Join(", ", tempStack)));
+            }
+        }
+
         private void EmitRet(MsilInstruction instruction)
         {
             _instructions.Append(CreatePreamble(instruction));
@@ -556,18 +551,24 @@ namespace Picard
         private void EmitLdstr(MsilInstruction instruction)
         {
             var operand = (string)instruction.Operand;
-            var identifier = _state.NextIdentifier();
+            var identifier = _directiveEmiter.NextIdentifier();
 
             _stack.Push(identifier);
-            _state.AddData(identifier, operand);
+            _directiveEmiter.AddData(identifier, operand);
 
-            _state.AddDirective(string.Format("{0}{1} = constant [{2} x i8] c\"{3}\\00\"",
+            _directiveEmiter.AddDirective(string.Format("{0}{1} = constant [{2} x i8] c\"{3}\\00\"",
                 CreatePreamble(instruction),
                 identifier,
                 operand.Length + 1,
                 operand));
         }
-        
+
+        // Helpers - General
+        private string NextIdentifier()
+        {
+            return string.Format("%{0}", _identifierCounter++);
+        }
+
         // Helpers - Static
         private static string CreatePreamble(MsilInstruction instruction)
         {
