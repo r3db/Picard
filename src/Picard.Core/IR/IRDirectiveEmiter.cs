@@ -5,6 +5,7 @@ using System.Threading;
 
 namespace Picard
 {
+    // Todo: We can do better!
     internal sealed class IRDirectiveEmiter
     {
         // Internal Instance Data

@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 
@@ -131,6 +130,10 @@ namespace Picard
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Br_S:
+                    {
+                        EmitBrS(instruction);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Brfalse_S:
                     case MsilInstructionOpCodeValue.Brtrue_S:
                     case MsilInstructionOpCodeValue.Beq_S:
@@ -325,19 +328,7 @@ namespace Picard
                         break;
                     }
                 }
-
-                //// Todo: We need a mapping to make this faster!
-                //if (instruction.Code == System.Reflection.Emit.OpCodes.Brtrue_S)
-                //{
-                //    var arg0 = stack.Pop();
-                //    var res0 = string.Format("%{0}", localCounter);
-
-                //    sb.AppendLine(string.Format("{0} = icmp i32 {1}, true", res0, arg0));
-                //    sb.AppendFormat("\tIR_{0:x4}: ", instruction.Offset);
-                //    sb.AppendLine(string.Format("br i32 {0}, label IR_{1:x4}", res0, instruction.Operand));
-                //    continue;
-                //}
-
+                
                 //if (instruction.Code == System.Reflection.Emit.OpCodes.Br_S)
                 //{
                 //    var arg0 = stack.Pop();
@@ -506,18 +497,19 @@ namespace Picard
         // Todo: Refactor!
         private void EmitCall(MsilInstruction instruction)
         {
-            var op = (MethodInfo)instruction.Operand;
-            var tempStack = new Stack<object>();
+            var stack = new Stack();
+            var operand = (MethodInfo)instruction.Operand;
 
-            for (var k = 0; k < op.GetParameters().Length; k++)
+            for (var i = 0; i < operand.GetParameters().Length; i++)
             {
-                tempStack.Push(_stack.Pop());
+                stack.Push(_stack.Pop());
             }
 
-            if (op.Name == "WriteLine")
+            // Todo: We either need to match this with an intrisic 'function call' or process another method!
+            if (operand.Name == "WriteLine")
             {
-                var res0 = NextIdentifier();
-                var pop = tempStack.Pop() as string;
+                var identifier = NextIdentifier();
+                var pop = stack.Pop() as string;
 
                 if (pop == null)
                 {
@@ -526,14 +518,12 @@ namespace Picard
                 }
 
                 var str = _directiveEmiter.GetData<string>(pop);
-                _instructions.AppendLine(string.Format("{0} = getelementptr [{1} x i8]* {2}, i64 0, i64 0", res0, str.Length + 1,
-                    pop));
-                _instructions.AppendFormat("IR_{0:x4}: ", instruction.Offset);
-                _instructions.AppendLine(string.Format("call i32 @puts(i8* {0})", res0));
+                _instructions.AppendLine(string.Format("{0}{1} = getelementptr [{2} x i8]* {3}, i64 0, i64 0", CreatePreamble(instruction), identifier, str.Length + 1, pop));
+                _instructions.AppendLine(string.Format("{0}call i32 @puts(i8* {1})", CreatePreamble(instruction), identifier));
             }
             else
             {
-                _instructions.AppendLine(string.Format("call i32 @{0}({1})", op.Name, string.Join(", ", tempStack)));
+                _instructions.AppendLine(string.Format("call i32 @{0}({1})", operand.Name, string.Join(", ", stack)));
             }
         }
 
@@ -541,6 +531,12 @@ namespace Picard
         {
             _instructions.Append(CreatePreamble(instruction));
             _instructions.AppendLine("ret void");
+        }
+
+        private void EmitBrS(MsilInstruction instruction)
+        {
+            _instructions.Append(CreatePreamble(instruction));
+            _instructions.AppendLine(string.Format("br label IR_{0:x4}", instruction.Operand));
         }
 
         private void EmitLdstr(MsilInstruction instruction)
@@ -559,6 +555,7 @@ namespace Picard
         }
 
         // Helpers - General
+        // Todo: I don't like this!
         private string NextIdentifier()
         {
             return string.Format("%{0}", _identifierCounter++);
