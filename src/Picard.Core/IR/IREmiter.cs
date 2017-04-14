@@ -13,6 +13,8 @@ namespace Picard
         private readonly StringBuilder _localInstructions = new StringBuilder();
         private readonly StringBuilder _globalInstructions = new StringBuilder();
         private readonly IDictionary<string, object> _globalData = new Dictionary<string, object>();
+        // Todo: Determine the size of the locals!
+        private readonly object[] _locals = new object[100];
 
         private int _localIdentifierCounter;
         private int _globalIdentifierCounter;
@@ -31,7 +33,6 @@ namespace Picard
         private string EmitInternal(MethodBase method)
         {
             var instructions = new MsilInstructionDecoder(method.GetMethodBody()?.GetILAsByteArray(), method.Module).DecodeAll().ToList();
-            var locals = new object[100];
             
             for (var i = 0; i < instructions.Count; ++i)
             {
@@ -49,14 +50,49 @@ namespace Picard
                     case MsilInstructionOpCodeValue.Ldarg_1:
                     case MsilInstructionOpCodeValue.Ldarg_2:
                     case MsilInstructionOpCodeValue.Ldarg_3:
+                    {
+                        break;
+                    }
                     case MsilInstructionOpCodeValue.Ldloc_0:
+                    {
+                        PushToStack(_locals[0]);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldloc_1:
+                    {
+                        PushToStack(_locals[1]);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldloc_2:
+                    {
+                        PushToStack(_locals[2]);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldloc_3:
+                    {
+                        PushToStack(_locals[3]);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Stloc_0:
+                    {
+                        StoreInLocal(0);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Stloc_1:
+                    {
+                        StoreInLocal(1);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Stloc_2:
+                    {
+                        StoreInLocal(2);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Stloc_3:
+                    {
+                        StoreInLocal(3);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldarg_S:
                     case MsilInstructionOpCodeValue.Ldarga_S:
                     case MsilInstructionOpCodeValue.Starg_S:
@@ -72,20 +108,80 @@ namespace Picard
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Ldc_I4_M1:
+                    {
+                        PushToStack(-1);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldc_I4_0:
+                    {
+                        PushToStack(0);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldc_I4_1:
+                    {
+                        PushToStack(1);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldc_I4_2:
+                    {
+                        PushToStack(2);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldc_I4_3:
+                    {
+                        PushToStack(3);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldc_I4_4:
+                    {
+                        PushToStack(4);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldc_I4_5:
+                    {
+                        PushToStack(5);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldc_I4_6:
+                    {
+                        PushToStack(6);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldc_I4_7:
+                    {
+                        PushToStack(7);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldc_I4_8:
+                    {
+                        PushToStack(8);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldc_I4_S:
+                    {
+                        PushToStack(instruction.Operand);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldc_I4:
+                    {
+                        PushToStack(instruction.Operand);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldc_I8:
+                    {
+                        PushToStack(instruction.Operand);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldc_R4:
+                    {
+                        PushToStack(instruction.Operand);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Ldc_R8:
+                    {
+                        PushToStack(instruction.Operand);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Dup:
                     case MsilInstructionOpCodeValue.Pop:
                     case MsilInstructionOpCodeValue.Jmp:
@@ -126,7 +222,14 @@ namespace Picard
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Calli:
+                    {
+                        break;
+                    }
                     case MsilInstructionOpCodeValue.Ret:
+                    {
+                        EmitRet(instruction);
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Br_S:
                     case MsilInstructionOpCodeValue.Brfalse_S:
                     case MsilInstructionOpCodeValue.Brtrue_S:
@@ -346,75 +449,12 @@ namespace Picard
                 //    continue;
                 //}
                 
-                //if (instruction.Code == System.Reflection.Emit.OpCodes.Stloc_0)
-                //{
-                //    locals[0] = stack.Pop();
-                //    sb.AppendLine("__________");
-                //    continue;
-                //}
-
-                //if (instruction.Code == System.Reflection.Emit.OpCodes.Stloc_1)
-                //{
-                //    locals[1] = stack.Pop();
-                //    sb.AppendLine("__________");
-                //    continue;
-                //}
-
-                //if (instruction.Code == System.Reflection.Emit.OpCodes.Stloc_2)
-                //{
-                //    locals[2] = stack.Pop();
-                //    sb.AppendLine("__________");
-                //    continue;
-                //}
-
-
-                //if (instruction.Code == System.Reflection.Emit.OpCodes.Stloc_3)
-                //{
-                //    locals[3] = stack.Pop();
-                //    sb.AppendLine("__________");
-                //    continue;
-                //}
-
                 //if (instruction.Code == System.Reflection.Emit.OpCodes.Box)
                 //{
                 //    sb.AppendLine("__________");
                 //    continue;
                 //}
-
-                //if (instruction.Code == System.Reflection.Emit.OpCodes.Ldloc_0)
-                //{
-                //    stack.Push(locals[0]);
-                //    sb.AppendLine("__________");
-                //    continue;
-                //}
-
-                //if (instruction.Code == System.Reflection.Emit.OpCodes.Ldloc_1)
-                //{
-                //    stack.Push(locals[1]);
-                //    sb.AppendLine("__________");
-                //    continue;
-                //}
-
-                //if (instruction.Code == System.Reflection.Emit.OpCodes.Ldloc_2)
-                //{
-                //    stack.Push(locals[2]);
-                //    sb.AppendLine("__________");
-                //    continue;
-                //}
-
-                //if (instruction.Code == System.Reflection.Emit.OpCodes.Ldloc_3)
-                //{
-                //    stack.Push(locals[3]);
-                //    sb.AppendLine("__________");
-                //    continue;
-                //}
-
-                //if (instruction.Code == System.Reflection.Emit.OpCodes.Ldc_I4)
-                //{
-                //    stack.Push(instruction.Operand);
-                //    sb.AppendLine("__________");
-                //    continue;
-                //}
+                
 
                 //if (instruction.Code == System.Reflection.Emit.OpCodes.Ldarg_1)
                 //{
@@ -428,14 +468,6 @@ namespace Picard
                 //    continue;
                 //}
 
-                //if (instruction.Code == System.Reflection.Emit.OpCodes.Ldc_I4_S)
-                //{
-                //    stack.Push(string.Format("{0}", instruction.Operand));
-                //    sb.AppendLine("__________");
-                //    continue;
-                //}
-
-                ////ldc.i4.s
 
                 //if (instruction.Code == System.Reflection.Emit.OpCodes.Ldarg_2)
                 //{
@@ -448,20 +480,7 @@ namespace Picard
                 //    sb.AppendLine("__________");
                 //    continue;
                 //}
-
-                //if (instruction.Code == System.Reflection.Emit.OpCodes.Ldc_R4)
-                //{
-                //    stack.Push(string.Format("%{0}", instruction.Operand));
-                //    sb.AppendLine("__________");
-                //    continue;
-                //}
                 
-                //if (instruction.Code == System.Reflection.Emit.OpCodes.Ret)
-                //{
-                //    sb.AppendLine("ret void");
-                //    continue;
-                //}
-
                 //if (instruction.Code == System.Reflection.Emit.OpCodes.Conv_R4)
                 //{
                 //    var arg0 = stack.Pop();
@@ -584,6 +603,12 @@ namespace Picard
             _localInstructions.AppendLine("call void @llvm.donothing()");
         }
 
+        private void EmitRet(MsilInstruction instruction)
+        {
+            _localInstructions.Append(CreatePreamble(instruction));
+            _localInstructions.AppendLine("ret void");
+        }
+
         private void EmitLdstr(MsilInstruction instruction)
         {
             var operand = (string)instruction.Operand;
@@ -604,6 +629,11 @@ namespace Picard
         private string NextGlobalIdentifier()
         {
             return string.Format("@{0}", _globalIdentifierCounter++);
+        }
+
+        private void StoreInLocal(int index)
+        {
+            _locals[index] = _stack.Pop();
         }
 
         private void PushToStack(object value)
