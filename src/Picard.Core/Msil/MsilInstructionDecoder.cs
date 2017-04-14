@@ -44,12 +44,7 @@ namespace Picard
                     isMultiByte = false;
                     code = OpCodeUtility.GetSingleByteOpCode(il);
                 }
-
-                if ((MsilInstructionOpCodeValue)code.Value == MsilInstructionOpCodeValue.Br_S)
-                {
-                    Console.WriteLine();
-                }
-
+                
                 var instruction = new MsilInstruction
                 {
                     Code        = code,
