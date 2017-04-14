@@ -47,8 +47,8 @@
     <Compile Include="..\Solution\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="IR\LLVMEmiter.cs" />
-    <Compile Include="IR\LLVMMethodEmiter.cs" />
+    <Compile Include="LLVM\LLVMEmiter.cs" />
+    <Compile Include="LLVM\LLVMMethodEmiter.cs" />
     <Compile Include="Msil\MsilInstruction.cs" />
     <Compile Include="Msil\MsilInstructionDecoder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
