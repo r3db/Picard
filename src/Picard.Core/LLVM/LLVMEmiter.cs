@@ -47,12 +47,9 @@ namespace Picard
             })
             .ToArray();
 
-            var nl = Environment.NewLine;
-
             return new StringBuilder()
-                .Append(string.Join(nl, result.Select(x => x.Directives.Trim('\r', '\n'))))
-                .Append(nl + nl)
-                .Append(string.Join(nl + nl, result.Select(x => x.Code.Trim('\r', '\n'))))
+                .AppendLine(string.Join(Environment.NewLine, result.Select(x => x.Directives)))
+                .AppendLine(string.Join(Environment.NewLine, result.Select(x => x.Code)))
                 .ToString();
         }        
     }
