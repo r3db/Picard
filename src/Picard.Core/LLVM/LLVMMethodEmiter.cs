@@ -210,8 +210,19 @@ namespace Picard
                     case MsilInstructionOpCodeValue.Mul:
                     case MsilInstructionOpCodeValue.Div:
                     case MsilInstructionOpCodeValue.Div_Un:
+                    {
+                        break;
+                    }
                     case MsilInstructionOpCodeValue.Rem:
+                    {
+                        EmitRem();
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.Rem_Un:
+                    {
+                        EmitRemUn();
+                        continue;
+                    }
                     case MsilInstructionOpCodeValue.And:
                     case MsilInstructionOpCodeValue.Or:
                     case MsilInstructionOpCodeValue.Xor:
@@ -462,18 +473,6 @@ namespace Picard
                 //    stack.Push(res0);
                 //    continue;
                 //}
-
-                //if (instruction.Code == System.Reflection.Emit.OpCodes.Rem)
-                //{
-                //    var arg0 = stack.Pop();
-                //    var arg1 = stack.Pop();
-                //    var res0 = string.Format("%{0}", localCounter);
-
-                //    sb.AppendLine(string.Format("{0} = srem i32 {1} {2}", res0, arg0, arg1));
-                //    stack.Push(res0);
-                //    continue;
-                //}
-
                 //if (instruction.Code == System.Reflection.Emit.OpCodes.Call || instruction.Code == System.Reflection.Emit.OpCodes.Callvirt)
                 //{
                 //    var op = (MethodInfo)instruction.Operand;
@@ -578,6 +577,30 @@ namespace Picard
 
             AppendPreamble(instruction);
             _instructions.AppendLine(string.Format("br label %IR_{0:x4}", label));
+        }
+
+        private void EmitRem()
+        {
+            var arg0 = _instructionStack.Pop();
+            var arg1 = _instructionStack.Pop();
+            var identifier = NextInstructionIdentifier();
+
+            // Todo: We need to figure the iN size!
+            AppendPreamble();
+            _instructions.AppendLine(string.Format("{0} = srem i32 {1} {2}", identifier, arg0, arg1));
+            _instructionStack.Push(identifier);
+        }
+
+        private void EmitRemUn()
+        {
+            var arg0 = _instructionStack.Pop();
+            var arg1 = _instructionStack.Pop();
+            var identifier = NextInstructionIdentifier();
+
+            // Todo: We need to figure the iN size!
+            AppendPreamble();
+            _instructions.AppendLine(string.Format("{0} = urem i32 {1} {2}", identifier, arg0, arg1));
+            _instructionStack.Push(identifier);
         }
 
         private void EmitLdstr(MsilInstruction instruction)
