@@ -65,7 +65,7 @@ namespace Picard
                 {
                     case MsilInstructionOpCodeValue.Nop:
                     {
-                        EmitNop(instruction);
+                        EmitNop();
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Break:
@@ -153,7 +153,7 @@ namespace Picard
                     }
                     case MsilInstructionOpCodeValue.Ret:
                     {
-                        EmitRet(instruction);
+                        EmitRet();
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Br_S:
@@ -487,7 +487,7 @@ namespace Picard
             _instructions.AppendLine(string.Format("IR_{0:x4}: ", instruction.Offset));
         }
 
-        private void EmitNop(MsilInstruction instruction)
+        private void EmitNop()
         {
             AppendPreamble();
             _instructions.AppendLine("call void @llvm.donothing()");
@@ -519,6 +519,8 @@ namespace Picard
 
                 var str = (string)_directiveStack.Pop();
                 AppendPreamble();
+                // Todo: Apparently we can inline this call?!
+                // Link: https://www.ibm.com/developerworks/library/os-createcompilerllvm1/
                 _instructions.AppendLine(string.Format("{0} = getelementptr [{1} x i8]* {2}, i64 0, i64 0", identifier, str.Length + 1, pop));
                 AppendPreamble();
                 _instructions.AppendLine(string.Format("call i32 @puts(i8* {0})", identifier));
@@ -530,7 +532,7 @@ namespace Picard
             }
         }
 
-        private void EmitRet(MsilInstruction instruction)
+        private void EmitRet()
         {
             AppendPreamble();
             _instructions.AppendLine("ret void");
