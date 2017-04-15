@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 
 namespace Picard
@@ -11,6 +12,8 @@ namespace Picard
             Action action0 = () =>
             {
                 Console.WriteLine("Some String 1");
+                Console.WriteLine("Some String 2");
+                Console.WriteLine("Some String 3");
             };
             
             var method0 = action0.Method;
@@ -39,8 +42,13 @@ namespace Picard
 
         private static void DumpLLVM(MethodInfo method)
         {
-            foreach (var item in LLVMEmiter.Emit(method, method).Split(new[] { Environment.NewLine }, StringSplitOptions.None))
+            var lines = LLVMEmiter.Emit(method)
+                .Split(new[] { Environment.NewLine }, StringSplitOptions.None)
+                .ToList();
+
+            for (var i = 0; i < lines.Count - 1; i++)
             {
+                var item = lines[i];
                 Console.ForegroundColor = item.Contains("########## >")
                     ? ConsoleColor.Yellow
                     : ConsoleColor.Red;

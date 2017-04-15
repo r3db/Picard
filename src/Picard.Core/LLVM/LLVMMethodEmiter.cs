@@ -591,7 +591,7 @@ namespace Picard
 
         private string NextInstructionIdentifier()
         {
-            return string.Format("%{0}", _instructionIdentifier++);
+            return string.Format("%.{0}", _instructionIdentifier++);
         }
 
         [Conditional("DEBUG")]

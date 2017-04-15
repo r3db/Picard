@@ -13,7 +13,7 @@ namespace Picard
         private readonly ThreadLocal<Func<string>> _identifierGenerator = new ThreadLocal<Func<string>>(() =>
         {
             var identifier = 0;
-            return () => string.Format("@{0}_{1}", Thread.CurrentThread.ManagedThreadId, identifier++);
+            return () => string.Format("@.{0}_{1}", Thread.CurrentThread.ManagedThreadId, identifier++);
         });
 
         // Internal Instance Data
@@ -50,6 +50,8 @@ namespace Picard
             return new StringBuilder()
                 .AppendLine(string.Join(Environment.NewLine, result.Select(x => x.Directives)))
                 .AppendLine(string.Join(Environment.NewLine, result.Select(x => x.Code)))
+                .AppendLine("declare i32 @puts(i8*)")
+                .AppendLine("declare void @llvm.donothing() nounwind readnone")
                 .ToString();
         }        
     }
