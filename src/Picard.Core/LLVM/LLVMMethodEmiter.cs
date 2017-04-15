@@ -507,7 +507,8 @@ namespace Picard
                 //    continue;
                 //}
 
-                AppendPreamble(instruction);
+                
+                AppendPreamble();
                 _instructions.AppendLine(string.Format("########## > {0}", instruction.Code));
             }
         }
@@ -516,12 +517,12 @@ namespace Picard
         // Helpers - Instructions
         private void EmitLabel(MsilInstruction instruction)
         {
-            _instructions.AppendLine(CreatePreamble(instruction));
+            _instructions.AppendLine(string.Format("IR_{0:x4}: ", instruction.Offset));
         }
 
         private void EmitNop(MsilInstruction instruction)
         {
-            AppendPreamble(instruction);
+            AppendPreamble();
             _instructions.AppendLine("call void @llvm.donothing()");
         }
         
@@ -544,25 +545,27 @@ namespace Picard
 
                 if (pop == null)
                 {
+                    AppendPreamble();
                     _instructions.AppendLine(string.Format("########## > {0}", instruction.Code));
                     return;
                 }
 
                 var str = (string)_directiveStack.Pop();
-                AppendPreamble(instruction);
+                AppendPreamble();
                 _instructions.AppendLine(string.Format("{0} = getelementptr [{1} x i8]* {2}, i64 0, i64 0", identifier, str.Length + 1, pop));
-                AppendPreamble(instruction);
+                AppendPreamble();
                 _instructions.AppendLine(string.Format("call i32 @puts(i8* {0})", identifier));
             }
             else
             {
+                AppendPreamble();
                 _instructions.AppendLine(string.Format("call i32 @{0}({1})", operand.Name, string.Join(", ", stack)));
             }
         }
 
         private void EmitRet(MsilInstruction instruction)
         {
-            AppendPreamble(instruction);
+            AppendPreamble();
             _instructions.AppendLine("ret void");
         }
 
@@ -575,7 +578,7 @@ namespace Picard
                 _labels.Add(label);
             }
 
-            AppendPreamble(instruction);
+            AppendPreamble();
             _instructions.AppendLine(string.Format("br label %IR_{0:x4}", label));
         }
 
@@ -610,8 +613,6 @@ namespace Picard
 
             _instructionStack.Push(identifier);
             _directiveStack.Push(operand);
-
-            AppendPreamble(instruction);
             _directives.AppendLine(string.Format("{0} = constant [{1} x i8] c\"{2}\\00\"", identifier, operand.Length + 1, operand));
         }
 
@@ -627,15 +628,9 @@ namespace Picard
         }
 
         [Conditional("DEBUG")]
-        private void AppendPreamble(MsilInstruction instruction)
+        private void AppendPreamble()
         {
-            _instructions.Append(CreatePreamble(instruction));
-        }
-
-        // Helpers - Static
-        private static string CreatePreamble(MsilInstruction instruction)
-        {
-            return string.Format("IR_{0:x4}: ", instruction.Offset);
+            _instructions.Append("    ");
         }
     }
 }
