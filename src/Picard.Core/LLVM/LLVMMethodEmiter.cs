@@ -477,9 +477,10 @@ namespace Picard
                 AppendPreamble();
                 _instructions.AppendLine(string.Format("########## > {0}", instruction.Code));
             }
-        }
 
             _instructions.AppendLine("}");
+        }
+        
         // Helpers - Instructions
         private void EmitLabel(MsilInstruction instruction)
         {
