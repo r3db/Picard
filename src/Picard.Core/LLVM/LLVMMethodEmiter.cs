@@ -473,40 +473,6 @@ namespace Picard
                 //    stack.Push(res0);
                 //    continue;
                 //}
-                //if (instruction.Code == System.Reflection.Emit.OpCodes.Call || instruction.Code == System.Reflection.Emit.OpCodes.Callvirt)
-                //{
-                //    var op = (MethodInfo)instruction.Operand;
-                //    var tempStack = new Stack<object>();
-
-                //    for (var k = 0; k < op.GetParameters().Length; k++)
-                //    {
-                //        tempStack.Push(stack.Pop());
-                //    }
-
-                //    if (op.Name == "WriteLine")
-                //    {
-                //        var res0 = string.Format("%{0}", localCounter);
-                //        var pop = tempStack.Pop() as string;
-
-                //        if (pop == null)
-                //        {
-                //            sb.AppendLine(string.Format("########## > {0}", instruction.Code));
-                //            continue;
-                //        }
-
-                //        var str = (string)globalData[pop];
-                //        sb.AppendLine(string.Format("{0} = getelementptr [{1} x i8]* {2}, i64 0, i64 0", res0, str.Length + 1, pop));
-                //        sb.AppendFormat("IR_{0:x4}: ", instruction.Offset);
-                //        sb.AppendLine(string.Format("call i32 @puts(i8* {0})", res0));
-                //    }
-                //    else
-                //    {
-                //        sb.AppendLine(string.Format("call i32 @{0}({1})", op.Name, string.Join(", ", tempStack)));
-                //    }
-
-                //    continue;
-                //}
-
                 
                 AppendPreamble();
                 _instructions.AppendLine(string.Format("########## > {0}", instruction.Code));
