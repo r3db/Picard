@@ -75,7 +75,7 @@ namespace Picard
         private static void PrintStatistics(int length, double swElapsedMilliseconds)
         {
             Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "\t{0:F2}ms for {1} instructions.", swElapsedMilliseconds, length));
-            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "\t{0:F2}μs per instruction.", swElapsedMilliseconds / length * 100f));
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "\t{0:F2}μs per instruction.", swElapsedMilliseconds / length * 1000f));
             Console.WriteLine();
         }
     }

@@ -35,7 +35,7 @@ namespace Picard
         private string Emit()
         {
             // Todo: Check for any missing Methods we may have found on the way!
-            var result = _methods.AsParallel().Select(x =>
+            var result = _methods.Select(x =>
             {
                 var emiter = LLVMMethodEmiter.Emit(x, _identifierGenerator.Value);
 
