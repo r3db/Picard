@@ -51,6 +51,9 @@ namespace Picard
         {
             var locals = new ArrayList(_body.LocalVariables.Count);
 
+            _instructions.AppendLine("define void @main() {");
+            _instructions.AppendLine("entry:");
+
             foreach (var instruction in new MsilInstructionDecoder(_msil, _module).DecodeAll())
             {
                 if (_labels.Contains(instruction.Offset))
@@ -510,6 +513,7 @@ namespace Picard
             }
         }
 
+            _instructions.AppendLine("}");
         // Helpers - Instructions
         private void EmitLabel(MsilInstruction instruction)
         {
