@@ -68,16 +68,13 @@ namespace Picard
             }
         }
 
-        internal static void CompileProgram(NvvmProgram program)
+        internal static string CompileProgram(NvvmProgram program)
         {
             if (Nvvm.nvvmCompileProgram(program, 0, null) != nvvmResult.NVVM_SUCCESS)
             {
                 throw new InvalidProgramException(GetProgramLog(program));
             }
-        }
-        
-        internal static string GetCompiledResult(NvvmProgram program)
-        {
+
             var buffer = new StringBuilder((int)GetCompiledResultSize(program));
 
             if (Nvvm.nvvmGetCompiledResult(program, buffer) != nvvmResult.NVVM_SUCCESS)
@@ -87,7 +84,7 @@ namespace Picard
 
             return buffer.ToString();
         }
-
+        
         // Helpers
         private static unsafe ulong GetCompiledResultSize(NvvmProgram program)
         {
