@@ -19,7 +19,6 @@ namespace Picard
             };
             
             var method0 = action0.Method;
-
             
             DumpIL(method0);
             Console.WriteLine(new string('-', 110));
