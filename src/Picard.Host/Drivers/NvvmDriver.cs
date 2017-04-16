@@ -70,7 +70,9 @@ namespace Picard
 
         internal static unsafe string CompileProgram(NvvmProgram program)
         {
-            if (Nvvm.nvvmCompileProgram(program, 0, null) != nvvmResult.NVVM_SUCCESS)
+            var options = new[] {"-arch=compute_50"};
+
+            if (Nvvm.nvvmCompileProgram(program, options.Length, options) != nvvmResult.NVVM_SUCCESS)
             {
                 throw new InvalidProgramException(GetProgramLog(program));
             }
