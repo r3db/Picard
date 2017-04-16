@@ -68,14 +68,21 @@ namespace Picard
             }
         }
 
-        internal static string CompileProgram(NvvmProgram program)
+        internal static unsafe string CompileProgram(NvvmProgram program)
         {
             if (Nvvm.nvvmCompileProgram(program, 0, null) != nvvmResult.NVVM_SUCCESS)
             {
                 throw new InvalidProgramException(GetProgramLog(program));
             }
 
-            var buffer = new StringBuilder((int)GetCompiledResultSize(program));
+            ulong size;
+
+            if (Nvvm.nvvmGetCompiledResultSize(program, &size) != nvvmResult.NVVM_SUCCESS)
+            {
+                throw new InvalidProgramException();
+            }
+
+            var buffer = new StringBuilder((int)size);
 
             if (Nvvm.nvvmGetCompiledResult(program, buffer) != nvvmResult.NVVM_SUCCESS)
             {
@@ -86,19 +93,7 @@ namespace Picard
         }
         
         // Helpers
-        private static unsafe ulong GetCompiledResultSize(NvvmProgram program)
-        {
-            ulong size;
-
-            if (Nvvm.nvvmGetCompiledResultSize(program, &size) != nvvmResult.NVVM_SUCCESS)
-            {
-                throw new InvalidProgramException();
-            }
-
-            return size;
-        }
-
-        private static unsafe ulong GetProgramLogSize(NvvmProgram program)
+        private static unsafe string GetProgramLog(NvvmProgram program)
         {
             ulong size;
 
@@ -107,12 +102,7 @@ namespace Picard
                 throw new InvalidProgramException();
             }
 
-            return size;
-        }
-
-        private static string GetProgramLog(NvvmProgram program)
-        {
-            var buffer = new StringBuilder((int)GetProgramLogSize(program));
+            var buffer = new StringBuilder((int)size);
 
             if (Nvvm.nvvmGetProgramLog(program, buffer) != nvvmResult.NVVM_SUCCESS)
             {
