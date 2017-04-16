@@ -11,22 +11,65 @@ namespace Picard
     {
         private static void Main()
         {
-            Action action0 = () =>
-            {
-                Console.WriteLine("Some String 1");
-                Console.WriteLine("Some String 2");
-                Console.WriteLine("Some String 3");
-            };
-            
-            var method0 = action0.Method;
-            
-            DumpIL(method0);
-            Console.WriteLine(new string('-', 110));
-            
-            DumpLLVM(method0);
-            Console.WriteLine(new string('-', 110));
+            NvvmInterop();
 
-            Console.ReadLine();
+            //Action action0 = () =>
+            //{
+            //    Console.WriteLine("Some String 1");
+            //    Console.WriteLine("Some String 2");
+            //    Console.WriteLine("Some String 3");
+            //};
+
+            //var method0 = action0.Method;
+
+            //DumpIL(method0);
+            //Console.WriteLine(new string('-', 110));
+
+            //DumpLLVM(method0);
+            //Console.WriteLine(new string('-', 110));
+
+            //Console.ReadLine();
+        }
+
+        private static void NvvmInterop()
+        {
+            Console.WriteLine(NvvmDriver.Version);
+            Console.WriteLine(NvvmDriver.IRVersion);
+
+            var program = NvvmDriver.CreateProgram();
+
+            const string llvm = @"
+                target triple = ""nvptx64 - unknown - cuda""
+                target datalayout = ""e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64""
+
+                @.1_0 = constant[14 x i8] c""Some String 1\00""
+                @.1_1 = constant[14 x i8] c""Some String 2\00""
+                @.1_2 = constant[14 x i8] c""Some String 3\00""
+
+                define void @main() {
+                entry:
+                    call void @llvm.donothing()
+                    %.0 = getelementptr[14 x i8] * @.1_0, i64 0, i64 0
+                    call i32 @puts(i8 * %.0)
+                    call void @llvm.donothing()
+                    %.1 = getelementptr[14 x i8] * @.1_1, i64 0, i64 0
+                    call i32 @puts(i8 * %.1)
+                    call void @llvm.donothing()
+                    %.2 = getelementptr[14 x i8] * @.1_2, i64 0, i64 0
+                    call i32 @puts(i8 * %.2)
+                    call void @llvm.donothing()
+                    ret void
+                }
+
+                declare i32 @puts(i8 *)
+                declare void @llvm.donothing() nounwind readnone
+            ";
+            
+            NvvmDriver.AddModuleToProgram(program, llvm);
+            NvvmDriver.CompileProgram(program);
+            var ptx = NvvmDriver.GetCompiledResult(program);
+
+            NvvmDriver.DestroyProgram(program);
         }
 
         private static void DumpIL(MethodInfo method)
