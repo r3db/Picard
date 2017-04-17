@@ -97,7 +97,7 @@ namespace Picard
             return module;
         }
 
-        internal static unsafe CUfunc_st ModuleGetFunction(CUmod_st module, string function)
+        internal static unsafe CUfunc_st ModuleGetKernel(CUmod_st module, string function)
         {
             CUfunc_st func;
             var result = Cuda.cuModuleGetFunction(&func, module, function);
@@ -112,7 +112,7 @@ namespace Picard
 
         internal static void LaunchKernel(CUfunc_st function)
         {
-            const uint threads = 5;
+            const uint threads = 1;
             const uint blocks = 1;
 
             var stream = new CUstream_st();

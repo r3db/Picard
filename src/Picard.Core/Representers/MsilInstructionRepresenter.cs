@@ -154,7 +154,8 @@ namespace Picard
                 //}
                 case OperandType.InlineString:
                 {
-                    return string.Format(" \"{0}\"", instruction.Operand);
+                    // Todo: Introduce Sanitizer!
+                    return string.Format(" \"{0}\"", ((string)instruction.Operand).Replace("\r", "\\r").Replace("\n", "\\n"));
                 }
                 //case OperandType.InlineSwitch:
                 //{

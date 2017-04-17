@@ -6,28 +6,25 @@ using System.Reflection;
 
 namespace Picard
 {
-    // C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0\nvvm\libnvvm-samples\simple
     internal static class Program
     {
         private static void Main()
         {
-            Action action0 = () =>
+            Action action = () =>
             {
-                Console.WriteLine("Some String 1");
-                Console.WriteLine("Some String 2");
-                Console.WriteLine("Some String 3");
+                Console.WriteLine("Some String 1\r\n");
+                Console.WriteLine("Some String 2\r\n");
+                Console.WriteLine("Some String 3\r\n");
             };
 
-            var method0 = action0.Method;
-
-            DumpIL(method0);
+            DumpIL(action.Method);
             Console.WriteLine(new string('-', 110));
 
-            DumpLLVM(method0);
+            DumpLLVM(action.Method);
             Console.WriteLine(new string('-', 110));
-
-            CudaDriver.Initialize();
-            NvvmInterop(method0);
+            
+            ExecuteOnDevice(action.Method);
+            Console.WriteLine(new string('-', 110));
 
             Console.ReadLine();
         }
@@ -81,35 +78,32 @@ namespace Picard
             Console.WriteLine();
         }
 
-        private static void NvvmInterop(MethodInfo method)
+        private static void ExecuteOnDevice(MethodInfo method)
         {
-            Console.WriteLine(NvvmDriver.Version);
-            Console.WriteLine(NvvmDriver.IRVersion);
+            CudaDriver.Initialize();
 
             var sw = Stopwatch.StartNew();
 
+            CudaDriver.CreateContext(0);
+            var module = CudaDriver.LoadModule(ExtractPTX(method));
+            var kernel = CudaDriver.ModuleGetKernel(module, "main");
+
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0:F2}ms", sw.ElapsedMilliseconds));
+
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            CudaDriver.LaunchKernel(kernel);
+            CudaDriver.CtxSynchronize();
+            Console.ResetColor();
+        }
+
+        private static string ExtractPTX(MethodInfo method)
+        {
             var program = NvvmDriver.CreateProgram();
 
-            var llvm = LLVMEmiter.Emit(method);
-            
-            NvvmDriver.AddModuleToProgram(program, llvm);
+            NvvmDriver.AddModuleToProgram(program, LLVMEmiter.Emit(method));
             var ptx = NvvmDriver.CompileProgram(program);
-            
-            var device = CudaDriver.GetDevice(0);
-
-            Console.WriteLine(CudaDriver.GetDeviceCount());
-            Console.WriteLine(CudaDriver.GetDeviceName(0));
-            Console.WriteLine(CudaDriver.GetComputeCapability(device));
-
-            var ctx = CudaDriver.CreateContext(0);
-            var mod = CudaDriver.LoadModule(ptx);
-            var function = CudaDriver.ModuleGetFunction(mod, "main");
-
-            Console.WriteLine(sw.ElapsedMilliseconds);
-
-            CudaDriver.LaunchKernel(function);
-            CudaDriver.CtxSynchronize();
             NvvmDriver.DestroyProgram(program);
+            return ptx;
         }
     }
 }

@@ -9,27 +9,6 @@ namespace Picard
 {
     public sealed class LLVMEmiter
     {
-        // Internal Const Data
-        private const string Targets = @"
-            target triple = ""nvptx64 - unknown - cuda""
-            target datalayout = ""e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64""
-        ";
-
-        private const string Attributes = @"
-            declare i8* @llvm.nvvm.ptr.constant.to.gen.p0i8.p4i8(i8 addrspace(4)*) #0
-            declare i32 @vprintf(i8* nocapture, i8*) #1
-            declare void @llvm.donothing() #0
-
-            attributes #0 = { nounwind readnone }
-            attributes #1 = { nounwind }
-
-            !nvvmir.version = !{!0}
-            !nvvm.annotations = !{!1}
-
-            !0 = metadata !{i32 1, i32 2, i32 2, i32 0}
-            !1 = metadata !{void ()* @main, metadata !""kernel"", i32 1}
-        ";
-
         // Internal Instance Data
         private readonly ThreadLocal<Func<string>> _identifierGenerator = new ThreadLocal<Func<string>>(() =>
         {
@@ -68,11 +47,24 @@ namespace Picard
             })
             .ToArray();
 
+            // Todo: Reduce the number of calls!
             return new StringBuilder()
-                .AppendLine(Targets)
+                .AppendLine(@"target triple = ""nvptx64 - unknown - cuda""")
+                .AppendLine(@"target datalayout = ""e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64""")
                 .AppendLine(string.Join(Environment.NewLine, result.Select(x => x.Directives)))
                 .AppendLine(string.Join(Environment.NewLine, result.Select(x => x.Code)))
-                .AppendLine(Attributes)
+                .AppendLine(@"declare i8* @llvm.nvvm.ptr.constant.to.gen.p0i8.p4i8(i8 addrspace(4)*) #0")
+                .AppendLine(@"declare i32 @vprintf(i8* nocapture, i8*) #1")
+                .AppendLine(@"declare void @llvm.donothing() #0")
+                .AppendLine()
+                .AppendLine(@"attributes #0 = { nounwind readnone }")
+                .AppendLine(@"attributes #1 = { nounwind }")
+                .AppendLine()
+                .AppendLine(@"!nvvmir.version = !{!0}")
+                .AppendLine(@"!nvvm.annotations = !{!1}")
+                .AppendLine()
+                .AppendLine(@"!0 = metadata !{i32 1, i32 2, i32 2, i32 0}")
+                .AppendLine(@"!1 = metadata !{void ()* @main, metadata !""kernel"", i32 1}")
                 .ToString();
         }        
     }
