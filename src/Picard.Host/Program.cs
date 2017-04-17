@@ -86,20 +86,20 @@ namespace Picard
             Console.WriteLine(NvvmDriver.Version);
             Console.WriteLine(NvvmDriver.IRVersion);
 
+            var sw = Stopwatch.StartNew();
+
             var program = NvvmDriver.CreateProgram();
 
             const string llvm = @"
                 target triple = ""nvptx64 - unknown - cuda""
                 target datalayout = ""e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64""
 
-                @_1_0 = private addrspace(4) constant [5 x i8] c""%s\0D\0A\00""
-                @_1_1 = private addrspace(4) constant [11 x i8] c""My Message\00""
+                @_1_0 = private addrspace(4) constant [14 x i8] c""Some Text 2\0D\0A\00""
 
                 define void @main() {
                 entry:
-                    %_0 = call i8* @llvm.nvvm.ptr.constant.to.gen.p0i8.p4i8(i8 addrspace(4)* getelementptr inbounds ([11 x i8] addrspace(4)* @_1_1, i64 0, i64 0))
-                    %_1 = call i8* @llvm.nvvm.ptr.constant.to.gen.p0i8.p4i8(i8 addrspace(4)* getelementptr inbounds ([05 x i8] addrspace(4)* @_1_0, i64 0, i64 0))
-                    call i32 @vprintf(i8* %_0, i8* %_1)
+                    %_0 = call i8* @llvm.nvvm.ptr.constant.to.gen.p0i8.p4i8(i8 addrspace(4)* getelementptr inbounds ([14 x i8] addrspace(4)* @_1_0, i64 0, i64 0))
+                    call i32 @vprintf(i8* %_0, i8* null)
                     call void @llvm.donothing()
                     ret void
                 }
@@ -131,6 +131,9 @@ namespace Picard
             var ctx = CudaDriver.CreateContext(0);
             var mod = CudaDriver.LoadModule(ptx);
             var function = CudaDriver.ModuleGetFunction(mod, "main");
+
+            Console.WriteLine(sw.ElapsedMilliseconds);
+
             CudaDriver.LaunchKernel(function);
             CudaDriver.CtxSynchronize();
             NvvmDriver.DestroyProgram(program);
