@@ -91,34 +91,48 @@ namespace Picard
                 target triple = ""nvptx64 - unknown - cuda""
                 target datalayout = ""e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64""
 
-                @.1_0 = constant[14 x i8] c""Some String 1\00""
-                @.1_1 = constant[14 x i8] c""Some String 2\00""
-                @.1_2 = constant[14 x i8] c""Some String 3\00""
+                @_1_0 = private addrspace(4) constant [5 x i8] c""%s\0D\0A\00""
+                @_1_1 = private addrspace(4) constant [11 x i8] c""My Message\00""
 
                 define void @main() {
                 entry:
-                    call void @llvm.donothing()
-                    %.0 = getelementptr[14 x i8] * @.1_0, i64 0, i64 0
-                    call i32 @puts(i8 * %.0)
-                    call void @llvm.donothing()
-                    %.1 = getelementptr[14 x i8] * @.1_1, i64 0, i64 0
-                    call i32 @puts(i8 * %.1)
-                    call void @llvm.donothing()
-                    %.2 = getelementptr[14 x i8] * @.1_2, i64 0, i64 0
-                    call i32 @puts(i8 * %.2)
+                    %_0 = call i8* @llvm.nvvm.ptr.constant.to.gen.p0i8.p4i8(i8 addrspace(4)* getelementptr inbounds ([11 x i8] addrspace(4)* @_1_1, i64 0, i64 0))
+                    %_1 = call i8* @llvm.nvvm.ptr.constant.to.gen.p0i8.p4i8(i8 addrspace(4)* getelementptr inbounds ([05 x i8] addrspace(4)* @_1_0, i64 0, i64 0))
+                    call i32 @vprintf(i8* %_0, i8* %_1)
                     call void @llvm.donothing()
                     ret void
                 }
+                
+                declare i8* @llvm.nvvm.ptr.constant.to.gen.p0i8.p4i8(i8 addrspace(4)*) #0
+                declare i32 @vprintf(i8* nocapture, i8*) #1
+                declare void @llvm.donothing() #0
 
-                declare i32 @puts(i8 *)
-                declare void @llvm.donothing() nounwind readnone
+                attributes #0 = { nounwind readnone }
+                attributes #1 = { nounwind }
+
+                !nvvmir.version = !{!0}
+                !nvvm.annotations = !{!1}
+
+                !0 = metadata !{i32 1, i32 2, i32 2, i32 0}
+                !1 = metadata !{void ()* @main, metadata !""kernel"", i32 1}
             ";
 
             NvvmDriver.AddModuleToProgram(program, llvm);
             var ptx = NvvmDriver.CompileProgram(program);
+            
+            CudaDriver.Initialize();
+            var device = CudaDriver.GetDevice(0);
 
+            Console.WriteLine(CudaDriver.GetDeviceCount());
+            Console.WriteLine(CudaDriver.GetDeviceName(0));
+            Console.WriteLine(CudaDriver.GetComputeCapability(device));
+
+            var ctx = CudaDriver.CreateContext(0);
+            var mod = CudaDriver.LoadModule(ptx);
+            var function = CudaDriver.ModuleGetFunction(mod, "main");
+            CudaDriver.LaunchKernel(function);
+            CudaDriver.CtxSynchronize();
             NvvmDriver.DestroyProgram(program);
         }
-
     }
 }

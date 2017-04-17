@@ -46,6 +46,10 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Alea.CudaToolkit80, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ba52afc3c2e933d6, processorArchitecture=MSIL">
+      <HintPath>..\packages\Alea.CudaToolkit80.1.0.0-beta1\lib\net40\Alea.CudaToolkit80.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Alea.Nvvm, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ba52afc3c2e933d6, processorArchitecture=MSIL">
       <HintPath>..\packages\Alea.Nvvm.1.0.0\lib\net40\Alea.Nvvm.dll</HintPath>
       <Private>True</Private>
@@ -57,6 +61,7 @@
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
     <Compile Include="Drivers\NvvmDriver.cs" />
+    <Compile Include="Drivers\CudaDriver.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
