@@ -26,6 +26,7 @@ namespace Picard
             DumpLLVM(method0);
             Console.WriteLine(new string('-', 110));
 
+            CudaDriver.Initialize();
             NvvmInterop();
 
             Console.ReadLine();
@@ -120,7 +121,7 @@ namespace Picard
             NvvmDriver.AddModuleToProgram(program, llvm);
             var ptx = NvvmDriver.CompileProgram(program);
             
-            CudaDriver.Initialize();
+            
             var device = CudaDriver.GetDevice(0);
 
             Console.WriteLine(CudaDriver.GetDeviceCount());

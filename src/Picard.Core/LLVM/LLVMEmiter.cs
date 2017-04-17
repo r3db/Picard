@@ -9,6 +9,22 @@ namespace Picard
 {
     public sealed class LLVMEmiter
     {
+        // Internal Const Data
+        private const string Attributes = @"
+                declare i8* @llvm.nvvm.ptr.constant.to.gen.p0i8.p4i8(i8 addrspace(4)*) #0
+                declare i32 @vprintf(i8* nocapture, i8*) #1
+                declare void @llvm.donothing() #0
+
+                attributes #0 = { nounwind readnone }
+                attributes #1 = { nounwind }
+
+                !nvvmir.version = !{!0}
+                !nvvm.annotations = !{!1}
+
+                !0 = metadata !{i32 1, i32 2, i32 2, i32 0}
+                !1 = metadata !{void ()* @main, metadata !""kernel"", i32 1}
+            ";
+
         // Internal Instance Data
         private readonly ThreadLocal<Func<string>> _identifierGenerator = new ThreadLocal<Func<string>>(() =>
         {
@@ -50,8 +66,7 @@ namespace Picard
             return new StringBuilder()
                 .AppendLine(string.Join(Environment.NewLine, result.Select(x => x.Directives)))
                 .AppendLine(string.Join(Environment.NewLine, result.Select(x => x.Code)))
-                .AppendLine("declare i32 @puts(i8*)")
-                .AppendLine("declare void @llvm.donothing() nounwind readnone")
+                .AppendLine(string.Join(Environment.NewLine, Attributes.Split('\r', '\r').Select(x => x.Trim())))
                 .ToString();
         }        
     }
