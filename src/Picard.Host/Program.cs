@@ -74,10 +74,10 @@ namespace Picard
             Console.ResetColor();
         }
 
-        private static void PrintStatistics(int length, double swElapsedMilliseconds)
+        private static void PrintStatistics(int length, double elapsedMilliseconds)
         {
-            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "\t{0:F2}ms for {1} instructions.", swElapsedMilliseconds, length));
-            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "\t{0:F2}μs per instruction.", swElapsedMilliseconds / length * 1000f));
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "\t{0:F2}ms for {1} instructions.", elapsedMilliseconds, length));
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "\t{0:F2}μs per instruction.", elapsedMilliseconds / length * 1000f));
             Console.WriteLine();
         }
 
