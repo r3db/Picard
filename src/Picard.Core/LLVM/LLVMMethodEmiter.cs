@@ -519,11 +519,9 @@ namespace Picard
 
                 var str = (string)_directiveStack.Pop();
                 AppendPreamble();
-                // Todo: Apparently we can inline this call?!
-                // Link: https://www.ibm.com/developerworks/library/os-createcompilerllvm1/
-                _instructions.AppendLine(string.Format("{0} = getelementptr [{1} x i8]* {2}, i64 0, i64 0", identifier, str.Length + 1, pop));
+                _instructions.AppendLine(string.Format("{0} = call i8* @llvm.nvvm.ptr.constant.to.gen.p0i8.p4i8(i8 addrspace(4)* getelementptr inbounds ([{1} x i8] addrspace(4)* {2}, i64 0, i64 0))", identifier, str.Length + 1, pop));
                 AppendPreamble();
-                _instructions.AppendLine(string.Format("call i32 @puts(i8* {0})", identifier));
+                _instructions.AppendLine(string.Format("call i32 @vprintf(i8* {0}, i8* null)", identifier));
             }
             else
             {
@@ -582,7 +580,7 @@ namespace Picard
 
             _instructionStack.Push(identifier);
             _directiveStack.Push(operand);
-            _directives.AppendLine(string.Format("{0} = constant [{1} x i8] c\"{2}\\00\"", identifier, operand.Length + 1, operand));
+            _directives.AppendLine(string.Format("{0} = private addrspace(4) constant [{1} x i8] c\"{2}\\00\"", identifier, operand.Length + 1, operand));
         }
 
         // Helpers - General
@@ -593,7 +591,7 @@ namespace Picard
 
         private string NextInstructionIdentifier()
         {
-            return string.Format("%.{0}", _instructionIdentifier++);
+            return string.Format("%_{0}", _instructionIdentifier++);
         }
 
         [Conditional("DEBUG")]

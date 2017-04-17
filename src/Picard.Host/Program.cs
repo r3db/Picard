@@ -27,7 +27,7 @@ namespace Picard
             Console.WriteLine(new string('-', 110));
 
             CudaDriver.Initialize();
-            NvvmInterop();
+            NvvmInterop(method0);
 
             Console.ReadLine();
         }
@@ -81,7 +81,7 @@ namespace Picard
             Console.WriteLine();
         }
 
-        private static void NvvmInterop()
+        private static void NvvmInterop(MethodInfo method)
         {
             Console.WriteLine(NvvmDriver.Version);
             Console.WriteLine(NvvmDriver.IRVersion);
@@ -90,37 +90,10 @@ namespace Picard
 
             var program = NvvmDriver.CreateProgram();
 
-            const string llvm = @"
-                target triple = ""nvptx64 - unknown - cuda""
-                target datalayout = ""e-p:64:64:64-i1:8:8-i8:8:8-i16:16:16-i32:32:32-i64:64:64-f32:32:32-f64:64:64-v16:16:16-v32:32:32-v64:64:64-v128:128:128-n16:32:64""
-
-                @_1_0 = private addrspace(4) constant [14 x i8] c""Some Text 2\0D\0A\00""
-
-                define void @main() {
-                entry:
-                    %_0 = call i8* @llvm.nvvm.ptr.constant.to.gen.p0i8.p4i8(i8 addrspace(4)* getelementptr inbounds ([14 x i8] addrspace(4)* @_1_0, i64 0, i64 0))
-                    call i32 @vprintf(i8* %_0, i8* null)
-                    call void @llvm.donothing()
-                    ret void
-                }
-                
-                declare i8* @llvm.nvvm.ptr.constant.to.gen.p0i8.p4i8(i8 addrspace(4)*) #0
-                declare i32 @vprintf(i8* nocapture, i8*) #1
-                declare void @llvm.donothing() #0
-
-                attributes #0 = { nounwind readnone }
-                attributes #1 = { nounwind }
-
-                !nvvmir.version = !{!0}
-                !nvvm.annotations = !{!1}
-
-                !0 = metadata !{i32 1, i32 2, i32 2, i32 0}
-                !1 = metadata !{void ()* @main, metadata !""kernel"", i32 1}
-            ";
-
+            var llvm = LLVMEmiter.Emit(method);
+            
             NvvmDriver.AddModuleToProgram(program, llvm);
             var ptx = NvvmDriver.CompileProgram(program);
-            
             
             var device = CudaDriver.GetDevice(0);
 
