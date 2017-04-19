@@ -6,6 +6,7 @@ using System.Reflection;
 
 namespace Picard
 {
+    // Todo: Use Module Initializer!
     internal static class Program
     {
         private static void Main()
