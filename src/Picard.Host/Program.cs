@@ -81,10 +81,10 @@ namespace Picard
         private static void ExecuteOnDevice(MethodInfo method)
         {
             CudaDriver.Initialize();
+            CudaDriver.CreateContext(0);
 
             var sw = Stopwatch.StartNew();
-
-            CudaDriver.CreateContext(0);
+            
             var module = CudaDriver.LoadModule(ExtractPTX(method));
             var kernel = CudaDriver.ModuleGetKernel(module, "main");
 
