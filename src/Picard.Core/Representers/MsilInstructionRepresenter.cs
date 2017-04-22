@@ -1,81 +1,98 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 
-namespace Alea
+namespace Picard
 {
+    // Todo: Refactor!
     public static class MsilInstructionRepresenter
     {
         // Internal Static Data
-        private static readonly string mscorlib = typeof(string).Assembly.FullName;
+        private static readonly string _mscorlib = typeof(string).Assembly.FullName;
 
-        // Todo: Refactor!
         // Methods
         public static string Represent(MsilInstruction instruction, MethodInfo method)
         {
-            var dtn = method.DeclaringType == null 
-                ? typeof(object).Assembly.GetName().Name
-                : new AssemblyName(method.DeclaringType.Assembly.FullName).Name;
-
-            var locals = method.IsLightweightMethod()
-                ? new LocalVariableInfo[0]
-                : method.GetMethodBody().LocalVariables;
+            var dtn = new AssemblyName(method.DeclaringType.Assembly.FullName).Name;
+            var locals = method.GetMethodBody().LocalVariables;
 
             var result = new StringBuilder();
-            
-            result.AppendFormat("IL_{0:x4}: 0x{1:x2}{2} {3}{4}", instruction.Offset, instruction.Code.Value, instruction.IsMultiByte ? null : "  ", instruction.Code.Name, new string(' ', 12 - instruction.Code.Name.Length));
 
-            // Todo: I don't like this harcoded switch!
-            switch (instruction.Code.Value)
+            result.Append(RepresentPreamble(instruction));
+            result.Append(RepresentInstruction(instruction));
+            result.Append(RepresentVariableInformation(instruction, method));
+            result.Append(RepresentOperand(instruction, dtn, locals));
+
+            return result.ToString();
+        }
+        
+        // Helpers
+        private static string RepresentPreamble(MsilInstruction instruction)
+        {
+            return string.Format("IL_{0:x4}: 0x{1:x2}{2}",
+                instruction.Offset,
+                instruction.Code.Value,
+                instruction.IsMultiByte ? null : "  ");
+        }
+
+        private static string RepresentInstruction(MsilInstruction instruction)
+        {
+            return string.Format("{0}{1}",
+                instruction.Code.Name,
+                new string(' ', 12 - instruction.Code.Name.Length));
+        }
+
+        // Todo: This is not complete!
+        private static string RepresentVariableInformation(MsilInstruction instruction, MethodBase method)
+        {
+            switch (instruction.OpCodeValue)
             {
-                case 0x02:
+                case MsilInstructionOpCodeValue.Ldarg_0:
                 {
                     var param = method.GetParameters();
-                    result.AppendFormat(" // {0}", method.IsStatic ? param[0].Name : "this");
-                    break;
+                    return string.Format(" // {0}", method.IsStatic ? param[0].Name : "this");
                 }
-                case 0x03:
+                case MsilInstructionOpCodeValue.Ldarg_1:
+                case MsilInstructionOpCodeValue.Ldarg_2:
+                case MsilInstructionOpCodeValue.Ldarg_3:
                 {
                     var param = method.GetParameters();
-                    result.AppendFormat(" // {0}", method.IsStatic ? param[1].Name ?? $"$_{(char)97}" : param[0].Name ?? $"$_{(char)97}");
-                    break;
+                    return string.Format(" // {0}", method.IsStatic ? param[1].Name : param[0].Name);
                 }
-                case 0x04:
+                case MsilInstructionOpCodeValue.Ldloc_0:
+                case MsilInstructionOpCodeValue.Ldloc_1:
+                case MsilInstructionOpCodeValue.Ldloc_2:
+                case MsilInstructionOpCodeValue.Ldloc_3:
                 {
-                    var param = method.GetParameters();
-                    result.AppendFormat(" // {0}", method.IsStatic ? param[2].Name ?? $"$_{(char)98}" : param[1].Name ?? $"$_{(char)98}");
-                    break;
-                }
-                case 0x06:
-                case 0x0a:
-                {
-                    result.AppendFormat(" // {0}", "V_0"/*GetReturnTypeName(dtn, method.GetMethodBody().LocalVariables[0].LocalType)*/);
-                    break;
+                    return string.Format(" // {0}", "V_0" /*GetReturnTypeName(dtn, method.GetMethodBody().LocalVariables[0].LocalType)*/);
                 }
             }
 
+            return null;
+        }
+
+        // Todo: This is not complete!
+        private static string RepresentOperand(MsilInstruction instruction, string dtn, IList<LocalVariableInfo> locals)
+        {
             // Todo: Refactor!
             switch (instruction.Code.OperandType)
             {
                 case OperandType.InlineBrTarget:
                 {
-                    var offset = (int)instruction.Operand;
-                    result.AppendFormat("IL_{0:x8}", offset);
-                    break;
+                    var offset = (int) instruction.Operand;
+                    return string.Format("IL_{0:x8}", offset);
                 }
                 case OperandType.InlineField:
                 {
-                    var operand = (FieldInfo)instruction.Operand;
-                    result.AppendFormat(" {0} {1}::{2}", GetReturnTypeName(dtn, operand.FieldType), GetTypeName(dtn, operand.ReflectedType), operand.Name);
-                    break;
+                    var operand = (FieldInfo) instruction.Operand;
+                    return string.Format(" {0} {1}::{2}", GetReturnTypeName(dtn, operand.FieldType), GetTypeName(dtn, operand.ReflectedType), operand.Name);
                 }
                 case OperandType.InlineI:
                 {
-                    var o = instruction.Operand;
-                    result.AppendFormat(" {0}", o);
-                    break;
+                    return string.Format(" {0}", instruction.Operand);
                 }
                 //case OperandType.InlineI8:
                 //{
@@ -84,6 +101,7 @@ namespace Alea
                 //}
                 case OperandType.InlineMethod:
                 {
+                    var sb = new StringBuilder();
                     var methodInfo = instruction.Operand as MethodInfo;
 
                     if (methodInfo != null)
@@ -92,13 +110,13 @@ namespace Alea
 
                         if (operand.IsStatic == false)
                         {
-                            result.Append(" instance");
+                            sb.Append(" instance");
                         }
 
-                        result.AppendFormat(" {0} {1}::{2}", GetReturnTypeName(dtn, operand.ReturnType), GetTypeName(dtn, operand.ReflectedType), operand.Name);
-                        result.Append("(");
-                        result.Append(string.Join(", ", operand.GetParameters().Select(x => GetReturnTypeName(dtn, x.ParameterType))));
-                        result.Append(")");
+                        sb.AppendFormat(" {0} {1}::{2}", GetReturnTypeName(dtn, operand.ReturnType), GetTypeName(dtn, operand.ReflectedType), operand.Name);
+                        sb.Append("(");
+                        sb.Append(string.Join(", ", operand.GetParameters().Select(x => GetReturnTypeName(dtn, x.ParameterType))));
+                        sb.Append(")");
                     }
 
                     var constructorInfo = instruction.Operand as ConstructorInfo;
@@ -109,16 +127,16 @@ namespace Alea
 
                         if (operand.IsStatic == false)
                         {
-                            result.Append(" instance");
+                            sb.Append(" instance");
                         }
 
-                        result.AppendFormat(" void {0}::{1}", GetTypeName(dtn, operand.ReflectedType), operand.Name);
-                        result.Append("(");
-                        result.Append(string.Join(", ", operand.GetParameters().Select(x => GetReturnTypeName(dtn, x.ParameterType))));
-                        result.Append(")");
+                        sb.AppendFormat(" void {0}::{1}", GetTypeName(dtn, operand.ReflectedType), operand.Name);
+                        sb.Append("(");
+                        sb.Append(string.Join(", ", operand.GetParameters().Select(x => GetReturnTypeName(dtn, x.ParameterType))));
+                        sb.Append(")");
                     }
 
-                    break;
+                    return sb.ToString();
                 }
                 case OperandType.InlineNone:
                 {
@@ -136,8 +154,8 @@ namespace Alea
                 //}
                 case OperandType.InlineString:
                 {
-                    result.AppendFormat(" \"{0}\"", (string)instruction.Operand);
-                    break;
+                    // Todo: Introduce Sanitizer!
+                    return string.Format(" \"{0}\"", ((string)instruction.Operand).Replace("\r", "\\r").Replace("\n", "\\n"));
                 }
                 //case OperandType.InlineSwitch:
                 //{
@@ -151,9 +169,7 @@ namespace Alea
                 //}
                 case OperandType.InlineType:
                 {
-                    var type = (Type)instruction.Operand;
-                    result.AppendFormat(" {0}", GetReturnTypeName(dtn, type));
-                    break;
+                    return string.Format(" {0}", GetReturnTypeName(dtn, (Type)instruction.Operand));
                 }
                 //case OperandType.InlineVar:
                 //{
@@ -162,27 +178,20 @@ namespace Alea
                 //}
                 case OperandType.ShortInlineBrTarget:
                 {
-                    var offset = (byte)instruction.Operand;
-                    result.AppendFormat(" IL_{0:x4}", offset);
-                    break;
+                    return string.Format(" IL_{0:x4}", instruction.Operand);
                 }
                 case OperandType.ShortInlineI:
                 {
-                    var value = (byte)instruction.Operand;
-                    result.AppendFormat(" {0} // 0x{0:x2}", value);
-                    break;
+                    return string.Format(" {0} // 0x{0:x2}", instruction.Operand);
                 }
                 case OperandType.ShortInlineR:
                 {
-                    var value = instruction.Operand;
-                    result.AppendFormat(" {0}", value);
-                    break;
+                    return string.Format(" {0}", instruction.Operand);
                 }
                 case OperandType.ShortInlineVar:
                 {
                     var index = (byte)instruction.Operand;
-                    result.AppendFormat(" V_{0} // {1}", index, GetReturnTypeName(dtn, locals[index].LocalType));
-                    break;
+                    return string.Format(" V_{0} // {1}", index, GetReturnTypeName(dtn, locals[index].LocalType));
                 }
                 default:
                 {
@@ -190,13 +199,13 @@ namespace Alea
                 }
             }
 
-            return result.ToString();
+            return null;
         }
         
-        // Helpers
+        // Todo: This is not complete!
         private static string GetReturnTypeName(string declaringTypeName, Type type)
         {
-            if (type.Assembly.FullName == mscorlib)
+            if (type.Assembly.FullName == _mscorlib)
             {
                 if (type == typeof(void))
                 {

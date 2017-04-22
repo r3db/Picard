@@ -1,35 +1,45 @@
 ﻿using System;
+using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Alea
+namespace Picard
 {
+    // Todo: Use Module Initializer!
     internal static class Program
     {
         private static void Main()
         {
-            Action<int, float> action0 = (a, b) =>
+            Action action = () =>
             {
-                Console.WriteLine("Some String 1");
-                Console.WriteLine("Some String 2");
-                Console.WriteLine("What else should I put here??");
+                Console.WriteLine("Some String 1\r\n");
+                Console.WriteLine("Some String 2\r\n");
+                Console.WriteLine("Some String 3\r\n");
             };
-            Expression<Action<int, float>> action1 = (a, b) => Console.WriteLine(234);
 
-            var method0 = action0.Method;
-            var method1 = action1.Compile().Method;
+            DumpIL(action.Method);
+            Console.WriteLine(new string('-', 110));
 
-            DumpIL(method0);
-            DumpIR(method0);
-            DumpIL(method1);
-            DumpIR(method1);
+            DumpLLVM(action.Method);
+            Console.WriteLine(new string('-', 110));
+            
+            ExecuteOnDevice(action.Method);
+            Console.WriteLine(new string('-', 110));
+
+            Console.ReadLine();
         }
-
+        
         private static void DumpIL(MethodInfo method)
         {
+            var sw = Stopwatch.StartNew();
+
+            var msil = method.GetMethodBody()?.GetILAsByteArray();
+            var instructions = new MsilInstructionDecoder(msil, method.Module).DecodeAll().ToArray();
+
+            PrintStatistics(instructions.Length, sw.Elapsed.TotalMilliseconds);
+
             Console.ForegroundColor = ConsoleColor.Cyan;
-            var instructions = new MsilInstructionDecoder(method.GetILBytes(), method.GetTokenResolver()).DecodeAll();
 
             foreach (var instruction in instructions)
             {
@@ -37,18 +47,21 @@ namespace Alea
             }
 
             Console.ResetColor();
-            Console.WriteLine(new string('-', 110));
         }
 
-        private static void DumpIR(MethodInfo method)
+        private static void DumpLLVM(MethodInfo method)
         {
-            var result = IREmiter.Emit(method);
-            var lines = result.Split(new[] { Environment.NewLine }, StringSplitOptions.None).Where(x => x.Contains("__________") == false).ToList();
+            var sw = Stopwatch.StartNew();
 
-            Console.ForegroundColor = ConsoleColor.Red;
+            var lines = LLVMEmiter.Emit(method)
+                .Split(new[] { Environment.NewLine }, StringSplitOptions.None)
+                .ToArray();
 
-            foreach (var item in lines)
+            PrintStatistics(lines.Length, sw.Elapsed.TotalMilliseconds);
+
+            for (var i = 0; i < lines.Length - 1; i++)
             {
+                var item = lines[i];
                 Console.ForegroundColor = item.Contains("########## >")
                     ? ConsoleColor.Yellow
                     : ConsoleColor.Red;
@@ -57,7 +70,41 @@ namespace Alea
             }
 
             Console.ResetColor();
-            Console.WriteLine(new string('-', 110));
+        }
+
+        private static void PrintStatistics(int length, double elapsedMilliseconds)
+        {
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "\t{0:F2}ms for {1} instructions.", elapsedMilliseconds, length));
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "\t{0:F2}μs per instruction.", elapsedMilliseconds / length * 1000f));
+            Console.WriteLine();
+        }
+
+        private static void ExecuteOnDevice(MethodInfo method)
+        {
+            CudaDriver.Initialize();
+            CudaDriver.CreateContext(0);
+
+            var sw = Stopwatch.StartNew();
+            
+            var module = CudaDriver.LoadModule(ExtractPTX(method));
+            var kernel = CudaDriver.ModuleGetKernel(module, "main");
+
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "{0:F2}ms", sw.ElapsedMilliseconds));
+
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            CudaDriver.LaunchKernel(kernel);
+            CudaDriver.CtxSynchronize();
+            Console.ResetColor();
+        }
+
+        private static string ExtractPTX(MethodInfo method)
+        {
+            var program = NvvmDriver.CreateProgram();
+
+            NvvmDriver.AddModuleToProgram(program, LLVMEmiter.Emit(method));
+            var ptx = NvvmDriver.CompileProgram(program);
+            NvvmDriver.DestroyProgram(program);
+            return ptx;
         }
     }
 }

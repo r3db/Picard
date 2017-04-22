@@ -7,7 +7,7 @@
     <ProjectGuid>{48B0660C-BD2D-4FA1-A160-C3F5AF3CFA98}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Alea</RootNamespace>
+    <RootNamespace>Picard</RootNamespace>
     <AssemblyName>Picard.Core</AssemblyName>
     <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -47,16 +47,17 @@
     <Compile Include="..\Solution\SharedAssemblyInfo.cs">
       <Link>Properties\SharedAssemblyInfo.cs</Link>
     </Compile>
-    <Compile Include="Extensions\ReflectionExtensions.cs" />
-    <Compile Include="IR\IREmiter.cs" />
+    <Compile Include="LLVM\LLVMEmiter.cs" />
+    <Compile Include="LLVM\LLVMMethodEmiter.cs" />
+    <Compile Include="LLVM\LLVMMethodEmiterState.cs" />
+    <Compile Include="LLVM\LLVMMethodTranslator.cs" />
+    <Compile Include="LLVM\LLVMMethodTranslatorMapping.cs" />
     <Compile Include="Msil\MsilInstruction.cs" />
     <Compile Include="Msil\MsilInstructionDecoder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Representers\MsilInstructionRepresenter.cs" />
-    <Compile Include="TokenResolver\DynamicMethodTokenResolver.cs" />
-    <Compile Include="TokenResolver\ITokenResolver.cs" />
-    <Compile Include="TokenResolver\ModuleTokenResolver.cs" />
     <Compile Include="Utility\OpCodeUtility.cs" />
+    <Compile Include="Msil\MsilInstructionOpCodeValue.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
