@@ -1,36 +1,52 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reflection;
-using System.Text;
 
 namespace Picard
 {
     internal sealed class LLVMMethodEmiter
     {
-        // Internal Instance Data
-        private readonly Stack _directiveStack = new Stack();
-        private readonly Stack _instructionStack = new Stack();
-        private readonly StringBuilder _directives = new StringBuilder();
-        private readonly StringBuilder _instructions = new StringBuilder();
-        private readonly HashSet<int> _labels = new HashSet<int>();
+        #region Intrinsic Translator Registry
 
+        // Internal Static Data
+        private static readonly LLVMMethodTranslator _translator = new LLVMMethodTranslator
+        {
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"bool"                                           }, null),
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"char"                                           }, null),
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"char[]"                                         }, null),
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"char[]", "int", "int"                           }, null),
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"decimal"                                        }, null),
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"double"                                         }, null),
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"float"                                          }, null),
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"int"                                            }, null),
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"uint"                                           }, null),
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"long"                                           }, null),
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"ulong"                                          }, null),
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"object"                                         }, null),
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"string"                                         }, IntrinsicWriteLineForString),
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"string", "object"                               }, null),
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"string", "object", "object"                     }, null),
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"string", "object", "object", "object"           }, null),
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"string", "object", "object", "object", "object" }, null),
+            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"string", "object[]"                             }, null),
+        };
+
+        #endregion
+
+        // Internal Instance Data
+        private readonly LLVMMethodEmiterState _state;
         private readonly MethodBody _body;
         private readonly byte[] _msil;
         private readonly Module _module;
-        private readonly Func<string> _directiveIdentifierGenerator;
-
-        private int _instructionIdentifier;
-
+        
         // .Ctor
         private LLVMMethodEmiter(MethodBase method, Func<string> directiveIdentifierGenerator)
         {
+            _state = new LLVMMethodEmiterState(directiveIdentifierGenerator);
             _body = method.GetMethodBody();
             // ReSharper disable once PossibleNullReferenceException
             _msil = _body.GetILAsByteArray();
             _module = method.Module;
-            _directiveIdentifierGenerator = directiveIdentifierGenerator;
         }
         
         // Factory .Ctor
@@ -42,21 +58,21 @@ namespace Picard
         }
 
         // Properties - Readonly
-        internal string Code => _instructions.ToString();
+        internal string Code => _state.Instructions.ToString();
 
-        internal string Directives => _directives.ToString();
+        internal string Directives => _state.Directives.ToString();
 
         // Helpers
         private void Emit()
         {
             var locals = new ArrayList(_body.LocalVariables.Count);
 
-            _instructions.AppendLine("define void @main() {");
-            _instructions.AppendLine("entry:");
+            _state.Instructions.AppendLine("define void @main() {");
+            _state.Instructions.AppendLine("entry:");
 
             foreach (var instruction in new MsilInstructionDecoder(_msil, _module).DecodeAll())
             {
-                if (_labels.Contains(instruction.Offset))
+                if (_state.Labels.Contains(instruction.Offset))
                 {
                     EmitLabel(instruction);
                 }
@@ -82,7 +98,7 @@ namespace Picard
                     case MsilInstructionOpCodeValue.Ldloc_3:
                     {
                         var index = (int)MsilInstructionOpCodeValue.Ldloc_0 - (int)instruction.OpCodeValue;
-                        _instructionStack.Push(locals[index]);
+                        _state.InstructionStack.Push(locals[index]);
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Stloc_0:
@@ -91,7 +107,7 @@ namespace Picard
                     case MsilInstructionOpCodeValue.Stloc_3:
                     {
                         var index = (int)MsilInstructionOpCodeValue.Stloc_0 - (int)instruction.OpCodeValue;
-                        locals[index] = _instructionStack.Pop();
+                        locals[index] = _state.InstructionStack.Pop();
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Ldarg_S:
@@ -105,12 +121,12 @@ namespace Picard
                     }
                     case MsilInstructionOpCodeValue.Ldnull:
                     {
-                        _instructionStack.Push("null");
+                        _state.InstructionStack.Push("null");
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Ldc_I4_M1:
                     {
-                        _instructionStack.Push(-1);
+                        _state.InstructionStack.Push(-1);
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Ldc_I4_0:
@@ -124,7 +140,7 @@ namespace Picard
                     case MsilInstructionOpCodeValue.Ldc_I4_8:
                     {
                         var value = (int)MsilInstructionOpCodeValue.Ldc_I4_0 - (int)instruction.OpCodeValue;
-                        _instructionStack.Push(value);
+                        _state.InstructionStack.Push(value);
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Ldc_I4_S:
@@ -133,7 +149,7 @@ namespace Picard
                     case MsilInstructionOpCodeValue.Ldc_R4:
                     case MsilInstructionOpCodeValue.Ldc_R8:
                     {
-                        _instructionStack.Push(instruction.Operand);
+                        _state.InstructionStack.Push(instruction.Operand);
                         continue;
                     }
                     case MsilInstructionOpCodeValue.Dup:
@@ -367,6 +383,7 @@ namespace Picard
                     }
                 }
 
+                // Todo: Continue!
                 //if (instruction.Code == System.Reflection.Emit.OpCodes.Br_S)
                 //{
                 //    var arg0 = stack.Pop();
@@ -474,130 +491,107 @@ namespace Picard
                 //    continue;
                 //}
                 
-                AppendPreamble();
-                _instructions.AppendLine(string.Format("########## > {0}", instruction.Code));
+                _state.AppendPreamble();
+                _state.Instructions.AppendLine(string.Format("########## > {0}", instruction.Code));
             }
 
-            _instructions.AppendLine("}");
+            _state.Instructions.AppendLine("}");
         }
         
         // Helpers - Instructions
         private void EmitLabel(MsilInstruction instruction)
         {
-            _instructions.AppendLine(string.Format("IR_{0:x4}: ", instruction.Offset));
+            _state.Instructions.AppendLine(string.Format("IR_{0:x4}: ", instruction.Offset));
         }
 
         private void EmitNop()
         {
-            AppendPreamble();
-            _instructions.AppendLine("call void @llvm.donothing()");
+            _state.AppendPreamble();
+            _state.Instructions.AppendLine("call void @llvm.donothing()");
         }
         
-        // Todo: Refactor!
         private void EmitCall(MsilInstruction instruction)
         {
-            var stack = new Stack();
-            var operand = (MethodInfo)instruction.Operand;
+            var method = (MethodInfo)instruction.Operand;
+            var intrinsic = _translator.Resolve(method);
 
-            for (var i = 0; i < operand.GetParameters().Length; i++)
+            if (intrinsic != null)
             {
-                stack.Push(_instructionStack.Pop());
-            }
-
-            // Todo: We either need to match this with an intrisic 'function call' or process another method!
-            if (operand.Name == "WriteLine")
-            {
-                var identifier = NextInstructionIdentifier();
-                var pop = stack.Pop() as string;
-
-                if (pop == null)
-                {
-                    AppendPreamble();
-                    _instructions.AppendLine(string.Format("########## > {0}", instruction.Code));
-                    return;
-                }
-
-                var str = (string)_directiveStack.Pop();
-                AppendPreamble();
-                _instructions.AppendLine(string.Format("{0} = call i8* @llvm.nvvm.ptr.constant.to.gen.p0i8.p4i8(i8 addrspace(4)* getelementptr inbounds ([{1} x i8] addrspace(4)* {2}, i64 0, i64 0))", identifier, str.Length + 1, pop));
-                AppendPreamble();
-                _instructions.AppendLine(string.Format("call i32 @vprintf(i8* {0}, i8* null)", identifier));
+                intrinsic.Invoke(_state);
             }
             else
             {
-                AppendPreamble();
-                _instructions.AppendLine(string.Format("call i32 @{0}({1})", operand.Name, string.Join(", ", stack)));
+                throw new NotImplementedException();
             }
         }
-
+        
         private void EmitRet()
         {
-            AppendPreamble();
-            _instructions.AppendLine("ret void");
+            _state.AppendPreamble();
+            _state.Instructions.AppendLine("ret void");
         }
 
         private void EmitBrS(MsilInstruction instruction)
         {
             var label = (int)instruction.Operand;
 
-            if (_labels.Contains(label) == false)
+            if (_state.Labels.Contains(label) == false)
             {
-                _labels.Add(label);
+                _state.Labels.Add(label);
             }
 
-            AppendPreamble();
-            _instructions.AppendLine(string.Format("br label %IR_{0:x4}", label));
+            _state.AppendPreamble();
+            _state.Instructions.AppendLine(string.Format("br label %IR_{0:x4}", label));
         }
 
         private void EmitRem()
         {
-            var arg0 = _instructionStack.Pop();
-            var arg1 = _instructionStack.Pop();
-            var identifier = NextInstructionIdentifier();
+            var arg0 = _state.InstructionStack.Pop();
+            var arg1 = _state.InstructionStack.Pop();
+            var identifier = _state.NextInstructionIdentifier();
 
             // Todo: We need to figure the iN size!
-            AppendPreamble();
-            _instructions.AppendLine(string.Format("{0} = srem i32 {1} {2}", identifier, arg0, arg1));
-            _instructionStack.Push(identifier);
+            _state.AppendPreamble();
+            _state.Instructions.AppendLine(string.Format("{0} = srem i32 {1} {2}", identifier, arg0, arg1));
+            _state.InstructionStack.Push(identifier);
         }
 
         private void EmitRemUn()
         {
-            var arg0 = _instructionStack.Pop();
-            var arg1 = _instructionStack.Pop();
-            var identifier = NextInstructionIdentifier();
+            var arg0 = _state.InstructionStack.Pop();
+            var arg1 = _state.InstructionStack.Pop();
+            var identifier = _state.NextInstructionIdentifier();
 
             // Todo: We need to figure the iN size!
-            AppendPreamble();
-            _instructions.AppendLine(string.Format("{0} = urem i32 {1} {2}", identifier, arg0, arg1));
-            _instructionStack.Push(identifier);
+            _state.AppendPreamble();
+            _state.Instructions.AppendLine(string.Format("{0} = urem i32 {1} {2}", identifier, arg0, arg1));
+            _state.InstructionStack.Push(identifier);
         }
 
         private void EmitLdstr(MsilInstruction instruction)
         {
             var operand = (string)instruction.Operand;
-            var identifier = NextDirectiveIdentifier();
+            var identifier = _state.NextDirectiveIdentifier();
 
-            _instructionStack.Push(identifier);
-            _directiveStack.Push(operand);
-            _directives.AppendLine(string.Format("{0} = private addrspace(4) constant [{1} x i8] c\"{2}\\00\"", identifier, operand.Length + 1, operand));
+            _state.InstructionStack.Push(identifier);
+            _state.DirectiveStack.Push(operand);
+            _state.Directives.AppendLine(string.Format("{0} = private addrspace(4) constant [{1} x i8] c\"{2}\\00\"", identifier, operand.Length + 1, operand));
         }
 
-        // Helpers - General
-        private string NextDirectiveIdentifier()
+        #region Intrinsic Translators
+
+        private static void IntrinsicWriteLineForString(LLVMMethodEmiterState state)
         {
-            return _directiveIdentifierGenerator();
+            var identifier = state.NextInstructionIdentifier();
+            var argument = state.InstructionStack.Pop();
+            var str = (string)state.DirectiveStack.Pop();
+
+            state.AppendPreamble();
+            state.Instructions.AppendLine(string.Format("{0} = call i8* @llvm.nvvm.ptr.constant.to.gen.p0i8.p4i8(i8 addrspace(4)* getelementptr inbounds ([{1} x i8] addrspace(4)* {2}, i64 0, i64 0))", identifier, str.Length + 1, argument));
+            state.AppendPreamble();
+            state.Instructions.AppendLine(string.Format("call i32 @vprintf(i8* {0}, i8* null)", identifier));
         }
 
-        private string NextInstructionIdentifier()
-        {
-            return string.Format("%_{0}", _instructionIdentifier++);
-        }
-
-        [Conditional("DEBUG")]
-        private void AppendPreamble()
-        {
-            _instructions.Append("    ");
-        }
+        #endregion
     }
 }

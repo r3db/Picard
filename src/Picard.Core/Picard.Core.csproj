@@ -49,6 +49,9 @@
     </Compile>
     <Compile Include="LLVM\LLVMEmiter.cs" />
     <Compile Include="LLVM\LLVMMethodEmiter.cs" />
+    <Compile Include="LLVM\LLVMMethodEmiterState.cs" />
+    <Compile Include="LLVM\LLVMMethodTranslator.cs" />
+    <Compile Include="LLVM\LLVMMethodTranslatorMapping.cs" />
     <Compile Include="Msil\MsilInstruction.cs" />
     <Compile Include="Msil\MsilInstructionDecoder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
