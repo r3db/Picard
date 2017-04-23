@@ -14,14 +14,14 @@ namespace Picard
             Action action = () =>
             {
                 Console.WriteLine("Some String 1\r\n");
-                Console.WriteLine("Some String 2\r\n");
-                Console.WriteLine("Some String 3\r\n");
+                Console.WriteLine("Some String 2");
+                Console.WriteLine("Some String 3");
             };
 
             DumpIL(action.Method);
             Console.WriteLine(new string('-', 110));
 
-            DumpLLVM(action.Method);
+            DumpLlvm(action.Method);
             Console.WriteLine(new string('-', 110));
             
             ExecuteOnDevice(action.Method);
@@ -49,11 +49,11 @@ namespace Picard
             Console.ResetColor();
         }
 
-        private static void DumpLLVM(MethodInfo method)
+        private static void DumpLlvm(MethodInfo method)
         {
             var sw = Stopwatch.StartNew();
 
-            var lines = LLVMEmiter.Emit(method)
+            var lines = LlvmEmiter.Emit(method)
                 .Split(new[] { Environment.NewLine }, StringSplitOptions.None)
                 .ToArray();
 
@@ -101,7 +101,7 @@ namespace Picard
         {
             var program = NvvmDriver.CreateProgram();
 
-            NvvmDriver.AddModuleToProgram(program, LLVMEmiter.Emit(method));
+            NvvmDriver.AddModuleToProgram(program, LlvmEmiter.Emit(method));
             var ptx = NvvmDriver.CompileProgram(program);
             NvvmDriver.DestroyProgram(program);
             return ptx;

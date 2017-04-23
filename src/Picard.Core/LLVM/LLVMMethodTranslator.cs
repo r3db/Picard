@@ -6,15 +6,15 @@ using System.Reflection;
 
 namespace Picard
 {
-    internal sealed class LLVMMethodTranslator : IEnumerable
+    internal sealed class LlvmMethodTranslator : IEnumerable
     {
         // Internal Instance Data
-        private readonly IDictionary<string, IList<LLVMMethodTranslatorMapping>> _mappings = new Dictionary<string, IList<LLVMMethodTranslatorMapping>>();
+        private readonly IDictionary<string, IList<LlvmMethodTranslatorMapping>> _mappings = new Dictionary<string, IList<LlvmMethodTranslatorMapping>>();
 
         // Methods - Static
-        internal static LLVMMethodTranslatorMapping Register(string returnType, string name, string[] argumentTypes, Action<LLVMMethodEmiterState> codeResolver)
+        internal static LlvmMethodTranslatorMapping Register(string returnType, string name, string[] argumentTypes, Action<LvvmMethodEmiterState> codeResolver)
         {
-            return new LLVMMethodTranslatorMapping
+            return new LlvmMethodTranslatorMapping
             {
                 Name = string.Format("{0} {1} {2}", returnType.ToLowerInvariant(), name, argumentTypes.Length),
                 ArgumentTypes = argumentTypes,
@@ -23,7 +23,7 @@ namespace Picard
         }
 
         // Methods
-        internal Action<LLVMMethodEmiterState> Resolve(MethodInfo method)
+        internal Action<LvvmMethodEmiterState> Resolve(MethodInfo method)
         {
             var parameters = method.GetParameters();
             var name = string.Format("{0} {1}.{2} {3}", method.ReturnType.Name.ToLowerInvariant(), method.DeclaringType?.Name, method.Name, parameters.Length);
@@ -37,11 +37,11 @@ namespace Picard
             return _mappings[name].FirstOrDefault(x => x.ArgumentTypes.SequenceEqual(parameterNames))?.CodeResolver;
         }
 
-        internal void Add(LLVMMethodTranslatorMapping item)
+        internal void Add(LlvmMethodTranslatorMapping item)
         {
             if (_mappings.ContainsKey(item.Name) == false)
             {
-                _mappings.Add(item.Name, new List<LLVMMethodTranslatorMapping>());
+                _mappings.Add(item.Name, new List<LlvmMethodTranslatorMapping>());
             }
 
             _mappings[item.Name].Add(item);
