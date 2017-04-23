@@ -568,6 +568,7 @@ namespace Picard
             _state.InstructionStack.Push(identifier);
         }
 
+        // Todo: Reuse Strings?
         private void EmitLdstr(MsilInstruction instruction)
         {
             var operand = new LlvmString((string)instruction.Operand);
