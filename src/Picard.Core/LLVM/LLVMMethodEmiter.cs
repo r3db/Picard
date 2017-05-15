@@ -4,45 +4,45 @@ using System.Reflection;
 
 namespace Picard
 {
-    internal sealed class LLVMMethodEmiter
+    internal sealed class LlvmMethodEmiter
     {
         #region Intrinsic Translator Registry
 
         // Internal Static Data
-        private static readonly LLVMMethodTranslator _translator = new LLVMMethodTranslator
+        private static readonly LlvmMethodTranslator _translator = new LlvmMethodTranslator
         {
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"bool"                                           }, null),
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"char"                                           }, null),
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"char[]"                                         }, null),
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"char[]", "int", "int"                           }, null),
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"decimal"                                        }, null),
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"double"                                         }, null),
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"float"                                          }, null),
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"int"                                            }, null),
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"uint"                                           }, null),
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"long"                                           }, null),
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"ulong"                                          }, null),
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"object"                                         }, null),
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"string"                                         }, IntrinsicWriteLineForString),
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"string", "object"                               }, null),
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"string", "object", "object"                     }, null),
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"string", "object", "object", "object"           }, null),
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"string", "object", "object", "object", "object" }, null),
-            LLVMMethodTranslator.Register("void", "Console.WriteLine", new[] {"string", "object[]"                             }, null),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"bool"                                           }, null),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"char"                                           }, null),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"char[]"                                         }, null),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"char[]", "int", "int"                           }, null),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"decimal"                                        }, null),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"double"                                         }, null),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"float"                                          }, null),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"int"                                            }, null),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"uint"                                           }, null),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"long"                                           }, null),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"ulong"                                          }, null),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"object"                                         }, null),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"string"                                         }, IntrinsicWriteLineForString),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"string", "object"                               }, null),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"string", "object", "object"                     }, null),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"string", "object", "object", "object"           }, null),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"string", "object", "object", "object", "object" }, null),
+            LlvmMethodTranslator.Register("void", "Console.WriteLine", new[] {"string", "object[]"                             }, null),
         };
 
         #endregion
 
         // Internal Instance Data
-        private readonly LLVMMethodEmiterState _state;
+        private readonly LvvmMethodEmiterState _state;
         private readonly MethodBody _body;
         private readonly byte[] _msil;
         private readonly Module _module;
         
         // .Ctor
-        private LLVMMethodEmiter(MethodBase method, Func<string> directiveIdentifierGenerator)
+        private LlvmMethodEmiter(MethodBase method, Func<string> directiveIdentifierGenerator)
         {
-            _state = new LLVMMethodEmiterState(directiveIdentifierGenerator);
+            _state = new LvvmMethodEmiterState(directiveIdentifierGenerator);
             _body = method.GetMethodBody();
             // ReSharper disable once PossibleNullReferenceException
             _msil = _body.GetILAsByteArray();
@@ -50,9 +50,9 @@ namespace Picard
         }
         
         // Factory .Ctor
-        internal static LLVMMethodEmiter Emit(MethodBase method, Func<string> directiveIdentifierGenerator)
+        internal static LlvmMethodEmiter Emit(MethodBase method, Func<string> directiveIdentifierGenerator)
         {
-            var instance = new LLVMMethodEmiter(method, directiveIdentifierGenerator);
+            var instance = new LlvmMethodEmiter(method, directiveIdentifierGenerator);
             instance.Emit();
             return instance;
         }
@@ -568,26 +568,28 @@ namespace Picard
             _state.InstructionStack.Push(identifier);
         }
 
+        // Todo: Reuse Strings?
         private void EmitLdstr(MsilInstruction instruction)
         {
-            var operand = (string)instruction.Operand;
+            var operand = new LlvmString((string)instruction.Operand);
             var identifier = _state.NextDirectiveIdentifier();
-
+            
             _state.InstructionStack.Push(identifier);
             _state.DirectiveStack.Push(operand);
-            _state.Directives.AppendLine(string.Format("{0} = private addrspace(4) constant [{1} x i8] c\"{2}\\00\"", identifier, operand.Length + 1, operand));
+            _state.Directives.AppendLine(string.Format("{0} = private addrspace(4) constant [{1} x i8] c\"{2}\\00\"", identifier, operand.Original.Length + 1, operand.Encoded));
         }
 
         #region Intrinsic Translators
 
-        private static void IntrinsicWriteLineForString(LLVMMethodEmiterState state)
+        // Todo: Support C Format Style "%A"
+        private static void IntrinsicWriteLineForString(LvvmMethodEmiterState state)
         {
             var identifier = state.NextInstructionIdentifier();
             var argument = state.InstructionStack.Pop();
-            var str = (string)state.DirectiveStack.Pop();
+            var str = (LlvmString)state.DirectiveStack.Pop();
 
             state.AppendPreamble();
-            state.Instructions.AppendLine(string.Format("{0} = call i8* @llvm.nvvm.ptr.constant.to.gen.p0i8.p4i8(i8 addrspace(4)* getelementptr inbounds ([{1} x i8] addrspace(4)* {2}, i64 0, i64 0))", identifier, str.Length + 1, argument));
+            state.Instructions.AppendLine(string.Format("{0} = call i8* @llvm.nvvm.ptr.constant.to.gen.p0i8.p4i8(i8 addrspace(4)* getelementptr inbounds ([{1} x i8] addrspace(4)* {2}, i64 0, i64 0))", identifier, str.Original.Length + 1, argument));
             state.AppendPreamble();
             state.Instructions.AppendLine(string.Format("call i32 @vprintf(i8* {0}, i8* null)", identifier));
         }

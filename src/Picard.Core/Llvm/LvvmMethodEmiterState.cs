@@ -6,14 +6,15 @@ using System.Text;
 
 namespace Picard
 {
-    internal sealed class LLVMMethodEmiterState
+    
+    internal sealed class LvvmMethodEmiterState
     {
         // Internal Instance Data
         private readonly Func<string> _directiveIdentifierGenerator;
         private int _instructionIdentifier;
 
         // .Ctor
-        internal LLVMMethodEmiterState(Func<string> directiveIdentifierGenerator)
+        internal LvvmMethodEmiterState(Func<string> directiveIdentifierGenerator)
         {
             _directiveIdentifierGenerator = directiveIdentifierGenerator;
         }
