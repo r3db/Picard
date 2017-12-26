@@ -37,7 +37,7 @@ namespace Picard
             var msil = method.GetMethodBody()?.GetILAsByteArray();
             var instructions = new MsilInstructionDecoder(msil, method.Module).DecodeAll().ToArray();
 
-            PrintStatistics(instructions.Length, sw.Elapsed.TotalMilliseconds);
+            PrintStatistics(instructions.Length, sw.Elapsed);
 
             Console.ForegroundColor = ConsoleColor.Cyan;
 
@@ -57,7 +57,7 @@ namespace Picard
                 .Split(new[] { Environment.NewLine }, StringSplitOptions.None)
                 .ToArray();
 
-            PrintStatistics(lines.Length, sw.Elapsed.TotalMilliseconds);
+            PrintStatistics(lines.Length, sw.Elapsed);
 
             for (var i = 0; i < lines.Length - 1; i++)
             {
@@ -72,10 +72,10 @@ namespace Picard
             Console.ResetColor();
         }
 
-        private static void PrintStatistics(int length, double elapsedMilliseconds)
+        private static void PrintStatistics(int length, TimeSpan elapsed)
         {
-            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "\t{0:F2}ms for {1} instructions.", elapsedMilliseconds, length));
-            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "\t{0:F2}μs per instruction.", elapsedMilliseconds / length * 1000f));
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "\t{0:F2}ms for {1} instructions.", elapsed.TotalMilliseconds, length));
+            Console.WriteLine(string.Format(CultureInfo.InvariantCulture, "\t{0:F2}μs per instruction.", elapsed.TotalMilliseconds / length * 1000f));
             Console.WriteLine();
         }
 
