@@ -44,7 +44,6 @@ namespace Picard
         {
             _state = new LvvmMethodEmiterState(directiveIdentifierGenerator);
             _body = method.GetMethodBody();
-            // ReSharper disable once PossibleNullReferenceException
             _msil = _body.GetILAsByteArray();
             _module = method.Module;
         }

@@ -5,7 +5,6 @@ namespace Picard
     // Done!
     internal enum MsilInstructionOpCodeValue
     {
-        // ReSharper disable InconsistentNaming
         Nop            = 0x0000,
         Break          = 0x0001,
         Ldarg_0        = 0x0002,
@@ -232,6 +231,5 @@ namespace Picard
         Sizeof         = 0xFE1C,
         Refanytype     = 0xFE1D,
         Readonly       = 0xFE1E,
-        // ReSharper restore InconsistentNaming
     }
 }
